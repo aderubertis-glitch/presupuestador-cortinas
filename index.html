@@ -30,12 +30,11 @@
     </select>
 
     <label for="mecanismo">Mecanismo</label>
-    <div class="combo-wrap">
+    <div class="search-wrap">
       <input id="mecanismo" placeholder="Escribí para buscar" autocomplete="off" disabled>
-      <button id="mecanismoToggle" class="combo-toggle" type="button" aria-label="Mostrar mecanismos" disabled>⌄</button>
       <div id="mecanismosResults" class="search-results" hidden></div>
     </div>
-    <small class="hint">Tocá el campo o la flecha para ver todas las opciones. Escribí para filtrar.</small>
+    <small class="hint">Tocá para ver todas las opciones o escribí para filtrar.</small>
 
     <label for="subtipoTela">Tipo de tela del grupo elegido</label>
     <select id="subtipoTela">
@@ -43,12 +42,11 @@
     </select>
 
     <label for="tela">Tela</label>
-    <div class="combo-wrap">
+    <div class="search-wrap">
       <input id="tela" placeholder="Escribí para buscar" autocomplete="off" disabled>
-      <button id="telaToggle" class="combo-toggle" type="button" aria-label="Mostrar telas" disabled>⌄</button>
       <div id="telasResults" class="search-results" hidden></div>
     </div>
-    <small class="hint">Tocá el campo o la flecha para ver todas las opciones. Escribí para filtrar.</small>
+    <small class="hint">Tocá para ver todas las opciones o escribí para filtrar.</small>
 
     <div class="grid">
       <div>
@@ -67,9 +65,8 @@
     <details>
       <summary>Agregar accesorio (opcional)</summary>
       <label for="accesorio">Accesorio</label>
-      <div class="combo-wrap">
+      <div class="search-wrap">
         <input id="accesorio" placeholder="Escribí para buscar" autocomplete="off">
-        <button id="accesorioToggle" class="combo-toggle" type="button" aria-label="Mostrar accesorios">⌄</button>
         <div id="accesoriosResults" class="search-results" hidden></div>
       </div>
 
@@ -97,12 +94,11 @@
     <div id="budgetLines">
       <p class="empty">Todavía no agregaste ninguna cortina.</p>
     </div>
-<div><span>Descuento</span><b id="discountAmount">-$ 0</b></div>
-    </div>
+</div>
 
     <div class="discount-box">
       <label for="discountPercent">Descuento adicional (%)</label>
-      <input id="discountPercent" type="number" min="0" max="100" step="0.1" value="0">
+      <input id="discountPercent" type="number" min="0" max="100" step="0.1" value="3">
       <small class="hint">Los precios ya incluyen un 40% de descuento.</small>
     </div>
 
