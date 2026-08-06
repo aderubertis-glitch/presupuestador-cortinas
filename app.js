@@ -1,5 +1,5 @@
 const $=id=>document.getElementById(id);
-const state={lines:JSON.parse(localStorage.getItem("presupuesto_lines")||"[]"),discount:Number(localStorage.getItem("presupuesto_discount") ?? 3)};
+const state={lines:JSON.parse(localStorage.getItem("presupuesto_lines")||"[]"),discount:Number(localStorage.getItem("presupuesto_discount") ?? 0)};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const money=n=>new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS",maximumFractionDigits:0}).format(n||0);
 const num=v=>Number(String(v||"").trim().replace(/\./g,"").replace(",","."))||0;
@@ -197,7 +197,7 @@ function editLine(id){
   cantidad.value=x.q;
   accesorio.value=x.a||"";
   cantidadAccesorio.value=x.aq||1;
-  state.discount=Number(x.discountPct ?? 3);
+  state.discount=Number(x.discountPct ?? 0);
   if($("discountPercent")) $("discountPercent").value=state.discount;
 
   state.lines=state.lines.filter(item=>item.id!==id);
@@ -216,7 +216,7 @@ function copyLast(){
   subtipoTela.value=x.subtipo;loadFabrics();tela.value=x.t;telaPickerText.textContent=x.t;
   ancho.value=String(x.w).replace(".",",");largo.value=String(x.h).replace(".",",");cantidad.value=x.q;
   accesorio.value=x.a;accesorioPickerText.textContent=x.a||"Sin accesorio";cantidadAccesorio.value=x.aq||1;
-  state.discount=Number(x.discountPct ?? 3);
+  state.discount=Number(x.discountPct ?? 0);
   if($("discountPercent")) $("discountPercent").value=state.discount;
   calculate();scrollTo({top:0,behavior:"smooth"});
 }
@@ -224,7 +224,7 @@ function copyLast(){
 function newBudget(){
   if(!state.lines.length||confirm("¿Empezar un presupuesto nuevo?")){
     state.lines=[];
-    state.discount=3;
+    state.discount=0;
     if($("discountPercent")) $("discountPercent").value=3;
     save();
     render();
