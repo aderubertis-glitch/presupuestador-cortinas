@@ -37,7 +37,12 @@ function calc(){
   const mt=m?w*price(m)*q:0,tt=t?w*h*price(t)*q:0,at=a?(a.unidad==="ML"?w*price(a)*aq*q:price(a)*aq*q):0,total=mt+tt+at;
   mecanismoTotal.textContent=money(mt);telaTotal.textContent=money(tt);accesorioTotal.textContent=money(at);lineTotal.textContent=money(total);
   const warnings=[];
-  if(t?.anchoMaximo){const x=Number(String(t.anchoMaximo).replace(",",".").match(/[\d.]+/)?.[0]);if(x&&w>x)warnings.push(`El ancho supera el ancho informado de la tela (${t.anchoMaximo}).`)}
+  if(t?.anchoMaximo){
+    const rollWidth=Number(String(t.anchoMaximo).replace(",",".").match(/[\d.]+/)?.[0]);
+    if(rollWidth&&w>rollWidth&&h>rollWidth){
+      warnings.push(`La tela tiene un ancho de rollo de ${t.anchoMaximo}. Como ambas medidas de la cortina lo superan, no puede confeccionarse en una sola pieza.`);
+    }
+  }
   warning.hidden=!warnings.length;warning.innerHTML=warnings.map(x=>"⚠️ "+esc(x)).join("<br>");
   return{m,t,a,w,h,q,aq,total};
 }
