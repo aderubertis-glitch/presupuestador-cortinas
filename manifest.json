@@ -3,8 +3,8 @@
   "short_name": "Presupuestos",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f4f6f8",
-  "theme_color": "#24445f",
+  "background_color": "#f4f8f5",
+  "theme_color": "#0b6b3a",
   "icons": [
     {
       "src": "icon.svg",
