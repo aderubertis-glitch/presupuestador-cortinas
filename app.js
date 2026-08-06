@@ -31,64 +31,76 @@ function loadFabricTypes(){
 
 function loadMechanisms(){
   mecanismo.value="";
+  mecanismoPickerText.textContent="Elegir mecanismo";
   const enabled=!!grupoMecanismo.value;
-  mecanismo.disabled=!enabled;
-  mecanismoToggle.disabled=!enabled;
-  mecanismosResults.hidden=true;
-  mecanismosResults.innerHTML="";
+  mecanismoPicker.disabled=!enabled;
   calculate();
 }
 
 function loadFabrics(){
   tela.value="";
+  telaPickerText.textContent="Elegir tela";
   const enabled=!!subtipoTela.value;
-  tela.disabled=!enabled;
-  telaToggle.disabled=!enabled;
-  telasResults.hidden=true;
-  telasResults.innerHTML="";
+  telaPicker.disabled=!enabled;
   calculate();
 }
 
 
-function normalized(value){
+
+
+
+function normalizeText(value){
   return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 }
 
-function showMatches(inputEl,resultsEl,items,showAll=false,limit=60){
-  const query=normalized(inputEl.value);
-  const matches=(showAll||!query
-    ? items
-    : items.filter(item=>normalized(item.descripcion).includes(query))
-  ).slice(0,limit);
+let activePicker=null;
+let activeItems=[];
 
-  resultsEl.innerHTML=matches.length
-    ? matches.map(item=>`<button type="button" class="search-option" data-value="${esc(item.descripcion)}">${esc(item.descripcion)}</button>`).join("")
-    : '<div class="search-empty">No se encontraron resultados.</div>';
+function renderPickerList(){
+  const q=normalizeText(pickerSearch.value);
+  const filtered=q
+    ? activeItems.filter(item=>normalizeText(item.descripcion).includes(q))
+    : activeItems;
 
-  resultsEl.hidden=false;
+  pickerResults.innerHTML=filtered.length
+    ? filtered.map(item=>`<button type="button" class="picker-option" data-value="${esc(item.descripcion)}">${esc(item.descripcion)}</button>`).join("")
+    : '<div class="picker-empty">No se encontraron resultados.</div>';
 
-  resultsEl.querySelectorAll(".search-option").forEach(button=>{
-    button.addEventListener("pointerdown",event=>{
-      event.preventDefault();
-      inputEl.value=button.dataset.value;
-      resultsEl.hidden=true;
-      resultsEl.innerHTML="";
+  pickerResults.querySelectorAll(".picker-option").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const value=btn.dataset.value;
+      if(activePicker==="mecanismo"){
+        mecanismo.value=value;
+        mecanismoPickerText.textContent=value;
+      }else if(activePicker==="tela"){
+        tela.value=value;
+        telaPickerText.textContent=value;
+      }else if(activePicker==="accesorio"){
+        accesorio.value=value;
+        accesorioPickerText.textContent=value||"Sin accesorio";
+      }
+      closePicker();
       calculate();
-      inputEl.blur();
     });
   });
 }
 
-function openCombo(inputEl,resultsEl,items){
-  if(inputEl.disabled)return;
-  if(inputEl.value){
-    try{inputEl.setSelectionRange(0,inputEl.value.length)}catch(error){}
-  }
-  showMatches(inputEl,resultsEl,items,true);
+function openPicker(type,title,items){
+  activePicker=type;
+  activeItems=items;
+  pickerTitle.textContent=title;
+  pickerSearch.value="";
+  pickerModal.hidden=false;
+  document.body.classList.add("modal-open");
+  renderPickerList();
+  setTimeout(()=>pickerSearch.focus(),80);
 }
 
-function hideResultsLater(resultsEl){
-  setTimeout(()=>{resultsEl.hidden=true;},180);
+function closePicker(){
+  pickerModal.hidden=true;
+  document.body.classList.remove("modal-open");
+  activePicker=null;
+  activeItems=[];
 }
 
 function calculate(){
@@ -96,15 +108,24 @@ function calculate(){
   const t=exact(fabricItems(),tela.value);
   const a=exact(PRODUCTOS.accesorios,accesorio.value);
   const w=num(ancho.value),h=num(largo.value),q=Math.max(1,+cantidad.value||1),aq=Math.max(1,+cantidadAccesorio.value||1);
+
   const mt=m?w*price(m)*q:0;
   const tt=t?w*h*price(t)*q:0;
   const at=a?(a.unidad==="ML"?w*price(a)*aq*q:price(a)*aq*q):0;
-  const total=mt+tt+at;
+  const subtotal=mt+tt+at;
+
+  const pct=Math.min(100,Math.max(0,Number(state.discount)||0));
+  const discount=subtotal*pct/100;
+  const total=subtotal-discount;
+
   mecanismoTotal.textContent=money(mt);
   telaTotal.textContent=money(tt);
   accesorioTotal.textContent=money(at);
+  if($("lineSubtotal")) $("lineSubtotal").textContent=money(subtotal);
+  if($("lineDiscount")) $("lineDiscount").textContent="-"+money(discount);
   lineTotal.textContent=money(total);
-  return{m,t,a,w,h,q,aq,total};
+
+  return{m,t,a,w,h,q,aq,subtotal,discount,total};
 }
 
 function save(){
@@ -113,17 +134,11 @@ function save(){
 }
 
 function render(){
-  budgetLines.innerHTML=state.lines.length?state.lines.map((x,i)=>`<article class="line"><div class="line-head"><span>Cortina ${i+1}</span><span>${money(x.total)}</span></div><div class="line-detail">${x.q} × ${x.w.toFixed(2).replace(".",",")} m × ${x.h.toFixed(2).replace(".",",")} m<br>${esc(x.grupo)} → ${esc(x.m)}<br>${esc(x.subtipo)} → ${esc(x.t)}${x.a?`<br>Accesorio: ${x.aq} × ${esc(x.a)}`:""}</div><div class="actions"><button class="edit" onclick="editLine(${x.id})">Editar</button><button class="delete" onclick="removeLine(${x.id})">Eliminar</button></div></article>`).join(""):'<p class="empty">Todavía no agregaste ninguna cortina.</p>';
+  budgetLines.innerHTML=state.lines.length?state.lines.map((x,i)=>`<article class="line"><div class="line-head"><span>Cortina ${i+1}</span><span>${money(x.total)}</span></div><div class="line-detail">${x.q} × ${x.w.toFixed(2).replace(".",",")} m × ${x.h.toFixed(2).replace(".",",")} m<br>${esc(x.grupo)} → ${esc(x.m)}<br>${esc(x.subtipo)} → ${esc(x.t)}${x.a?`<br>Accesorio: ${x.aq} × ${esc(x.a)}`:""}${x.discountPct?`<br>Descuento adicional: ${x.discountPct}%`:""}</div><div class="actions"><button class="edit" onclick="editLine(${x.id})">Editar</button><button class="delete" onclick="removeLine(${x.id})">Eliminar</button></div></article>`).join(""):'<p class="empty">Todavía no agregaste ninguna cortina.</p>';
 
-  const subtotal=state.lines.reduce((s,x)=>s+x.total,0);
-  const pct=Math.min(100,Math.max(0,Number(state.discount)||0));
-  const discount=subtotal*pct/100;
-  const total=subtotal-discount;
-
-  if($("subtotalGeneral")) $("subtotalGeneral").textContent=money(subtotal);
-  if($("discountAmount")) $("discountAmount").textContent="-"+money(discount);
-  $("grandTotal").textContent=money(total);
-  $("itemCount").textContent=`${state.lines.length} ${state.lines.length===1?"cortina":"cortinas"}`;
+  const total=state.lines.reduce((s,x)=>s+x.total,0);
+  grandTotal.textContent=money(total);
+  itemCount.textContent=`${state.lines.length} ${state.lines.length===1?"cortina":"cortinas"}`;
   if($("discountPercent")) $("discountPercent").value=state.discount;
 }
 
@@ -137,7 +152,7 @@ function clearEntry(resetSelectors=false){
   ancho.value="";
   largo.value="";
   cantidad.value=1;
-  accesorio.value="";
+  accesorio.value="";accesorioPickerText.textContent="Sin accesorio";
   cantidadAccesorio.value=1;
   calculate();
 }
@@ -157,7 +172,7 @@ function addLine(){
     subtipo:subtipoTela.value,
     t:c.t.descripcion,
     a:c.a?.descripcion||"",
-    w:c.w,h:c.h,q:c.q,aq:c.a?c.aq:0,total:c.total
+    w:c.w,h:c.h,q:c.q,aq:c.a?c.aq:0,discountPct:state.discount,total:c.total
   });
   save();render();clearEntry(false);addBtn.textContent="Agregar cortina";ancho.focus();
 }
@@ -172,16 +187,18 @@ function editLine(id){
   loadMechanisms();
   loadFabricTypes();
 
-  mecanismo.value=x.m;
+  mecanismo.value=x.m;mecanismoPickerText.textContent=x.m;
   subtipoTela.value=x.subtipo;
   loadFabrics();
-  tela.value=x.t;
+  tela.value=x.t;telaPickerText.textContent=x.t;
 
   ancho.value=String(x.w).replace(".",",");
   largo.value=String(x.h).replace(".",",");
   cantidad.value=x.q;
   accesorio.value=x.a||"";
   cantidadAccesorio.value=x.aq||1;
+  state.discount=Number(x.discountPct ?? 3);
+  if($("discountPercent")) $("discountPercent").value=state.discount;
 
   state.lines=state.lines.filter(item=>item.id!==id);
   save();
@@ -195,10 +212,12 @@ function editLine(id){
 
 function copyLast(){
   const x=state.lines.at(-1);if(!x)return alert("Todavía no hay una cortina para copiar.");
-  grupoMecanismo.value=x.grupo;loadMechanisms();loadFabricTypes();mecanismo.value=x.m;
-  subtipoTela.value=x.subtipo;loadFabrics();tela.value=x.t;
+  grupoMecanismo.value=x.grupo;loadMechanisms();loadFabricTypes();mecanismo.value=x.m;mecanismoPickerText.textContent=x.m;
+  subtipoTela.value=x.subtipo;loadFabrics();tela.value=x.t;telaPickerText.textContent=x.t;
   ancho.value=String(x.w).replace(".",",");largo.value=String(x.h).replace(".",",");cantidad.value=x.q;
-  accesorio.value=x.a;cantidadAccesorio.value=x.aq||1;
+  accesorio.value=x.a;accesorioPickerText.textContent=x.a||"Sin accesorio";cantidadAccesorio.value=x.aq||1;
+  state.discount=Number(x.discountPct ?? 3);
+  if($("discountPercent")) $("discountPercent").value=state.discount;
   calculate();scrollTo({top:0,behavior:"smooth"});
 }
 
@@ -217,12 +236,8 @@ function newBudget(){
 
 function sendWhatsApp(){
   if(!state.lines.length)return alert("Agregá al menos una cortina.");
-  const subtotal=state.lines.reduce((s,x)=>s+x.total,0);
-  const pct=Math.min(100,Math.max(0,Number(state.discount)||0));
-  const discount=subtotal*pct/100;
-  const total=subtotal-discount;
-  const extra=pct>0?[`Subtotal: ${money(subtotal)}`,`Descuento adicional ${pct}%: -${money(discount)}`]:[];
 
+  const total=state.lines.reduce((s,x)=>s+x.total,0);
   const msg=["PRESUPUESTO DE CORTINAS","",
     ...state.lines.flatMap((x,i)=>[
       `Cortina ${i+1}`,
@@ -230,9 +245,9 @@ function sendWhatsApp(){
       `${x.grupo}: ${x.m}`,
       `${x.subtipo}: ${x.t}`,
       x.a?`Accesorio: ${x.aq} × ${x.a}`:"",
+      x.discountPct?`Descuento adicional: ${x.discountPct}%`:"",
       money(x.total),""
     ]).filter(Boolean),
-    ...extra,
     `TOTAL: ${money(total)}`
   ].join("\\n");
 
@@ -241,20 +256,21 @@ function sendWhatsApp(){
 
 grupoMecanismo.addEventListener("change",()=>{loadMechanisms();loadFabricTypes();calculate();});
 subtipoTela.addEventListener("change",loadFabrics);
-mecanismo.addEventListener("input",()=>{showMatches(mecanismo,mecanismosResults,mechanismItems(),false);calculate();});
-tela.addEventListener("input",()=>{showMatches(tela,telasResults,fabricItems(),false);calculate();});
-accesorio.addEventListener("input",()=>{showMatches(accesorio,accesoriosResults,PRODUCTOS.accesorios,false);calculate();});
-mecanismo.addEventListener("focus",()=>openCombo(mecanismo,mecanismosResults,mechanismItems()));
-tela.addEventListener("focus",()=>openCombo(tela,telasResults,fabricItems()));
-accesorio.addEventListener("focus",()=>openCombo(accesorio,accesoriosResults,PRODUCTOS.accesorios));
-mecanismo.addEventListener("blur",()=>hideResultsLater(mecanismosResults));
-tela.addEventListener("blur",()=>hideResultsLater(telasResults));
-accesorio.addEventListener("blur",()=>hideResultsLater(accesoriosResults));
 ["ancho","largo","cantidad","cantidadAccesorio"].forEach(id=>$(id).addEventListener("input",calculate));
-discountPercent.addEventListener("input",()=>{state.discount=Math.min(100,Math.max(0,Number(discountPercent.value)||0));save();render();});
-mecanismoToggle.addEventListener("click",()=>{mecanismo.focus();openCombo(mecanismo,mecanismosResults,mechanismItems());});
-telaToggle.addEventListener("click",()=>{tela.focus();openCombo(tela,telasResults,fabricItems());});
-accesorioToggle.addEventListener("click",()=>{accesorio.focus();openCombo(accesorio,accesoriosResults,PRODUCTOS.accesorios);});
+
+mecanismoPicker.addEventListener("click",()=>openPicker("mecanismo","Elegir mecanismo",mechanismItems()));
+telaPicker.addEventListener("click",()=>openPicker("tela","Elegir tela",fabricItems()));
+accesorioPicker.addEventListener("click",()=>openPicker("accesorio","Elegir accesorio",PRODUCTOS.accesorios));
+pickerSearch.addEventListener("input",renderPickerList);
+pickerClose.addEventListener("click",closePicker);
+pickerModal.querySelector(".picker-backdrop").addEventListener("click",closePicker);
+if($("discountPercent")){
+  $("discountPercent").addEventListener("input",()=>{
+    state.discount=Math.min(100,Math.max(0,Number($("discountPercent").value)||0));
+    save();
+    calculate();
+  });
+}
 addBtn.onclick=addLine;
 copyLastBtn.onclick=copyLast;
 whatsappBtn.onclick=sendWhatsApp;

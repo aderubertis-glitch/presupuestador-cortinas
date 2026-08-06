@@ -45,3 +45,42 @@
 .search-option:last-child{border-bottom:0}
 .search-option:active{background:var(--soft)}
 .search-empty{padding:13px;color:var(--muted);font-size:15px}
+
+.picker-field{
+  width:100%;min-height:53px;margin:0;padding:12px 13px;
+  border:1.5px solid #aab9c3;border-radius:11px;background:#fff;
+  color:var(--text);display:flex;align-items:center;justify-content:space-between;
+  gap:12px;text-align:left;font-weight:500
+}
+.picker-field:disabled{background:#eef1f3;color:#9aa39e}
+.picker-arrow{font-size:24px;color:var(--brand);line-height:1}
+.picker-modal[hidden]{display:none}
+.picker-modal{position:fixed;inset:0;z-index:9999}
+.picker-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.35)}
+.picker-sheet{
+  position:absolute;left:0;right:0;bottom:0;
+  max-height:88vh;background:#fff;border-radius:20px 20px 0 0;
+  display:flex;flex-direction:column;
+  padding:14px 14px calc(14px + env(safe-area-inset-bottom));
+  box-shadow:0 -10px 30px rgba(0,0,0,.18)
+}
+.picker-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 2px 10px}
+.picker-header h2{margin:0;font-size:22px}
+.picker-close{width:auto;min-height:40px;margin:0;padding:8px 12px;background:var(--soft);color:var(--brand)}
+.picker-search-wrap{padding-bottom:10px}
+.picker-search{width:100%;min-height:50px;padding:11px 13px;border:1.5px solid #aab9c3;border-radius:11px;font-size:18px}
+.picker-list{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;flex:1;min-height:120px}
+.picker-option{
+  width:100%;margin:0;min-height:54px;padding:12px 10px;
+  border:0;border-bottom:1px solid var(--line);border-radius:0;
+  background:#fff;color:var(--text);text-align:left;font-weight:500
+}
+.picker-option:active{background:var(--soft)}
+.picker-empty{padding:20px 10px;color:var(--muted);text-align:center}
+body.modal-open{overflow:hidden}
+
+.calc-subtotal{margin-top:7px;padding-top:10px!important;border-top:1px solid #bdd5c6;font-weight:750}
+.inline-discount{display:block!important;margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:11px;background:#fff}
+.inline-discount label{display:block;margin:0 0 7px;font-weight:750}
+.inline-discount input{width:100%;min-height:48px}
+.discount-preview{color:var(--danger);font-weight:700}

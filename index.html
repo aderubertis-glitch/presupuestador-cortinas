@@ -30,12 +30,11 @@
     </select>
 
     <label for="mecanismo">Mecanismo</label>
-    <div class="combo-wrap">
-      <input id="mecanismo" placeholder="Escribí para buscar" autocomplete="off" disabled>
-      <button id="mecanismoToggle" class="combo-toggle" type="button" aria-label="Mostrar mecanismos" disabled>⌄</button>
-      <div id="mecanismosResults" class="search-results" hidden></div>
-    </div>
-    <small class="hint">Tocá el campo o la flecha para ver todas las opciones. Escribí para filtrar.</small>
+    <button id="mecanismoPicker" class="picker-field" type="button" disabled>
+      <span id="mecanismoPickerText">Elegir mecanismo</span>
+      <span class="picker-arrow">⌄</span>
+    </button>
+    <input id="mecanismo" type="hidden">
 
     <label for="subtipoTela">Tipo de tela del grupo elegido</label>
     <select id="subtipoTela">
@@ -43,12 +42,11 @@
     </select>
 
     <label for="tela">Tela</label>
-    <div class="combo-wrap">
-      <input id="tela" placeholder="Escribí para buscar" autocomplete="off" disabled>
-      <button id="telaToggle" class="combo-toggle" type="button" aria-label="Mostrar telas" disabled>⌄</button>
-      <div id="telasResults" class="search-results" hidden></div>
-    </div>
-    <small class="hint">Tocá el campo o la flecha para ver todas las opciones. Escribí para filtrar.</small>
+    <button id="telaPicker" class="picker-field" type="button" disabled>
+      <span id="telaPickerText">Elegir tela</span>
+      <span class="picker-arrow">⌄</span>
+    </button>
+    <input id="tela" type="hidden">
 
     <div class="grid">
       <div>
@@ -67,10 +65,11 @@
     <details>
       <summary>Agregar accesorio (opcional)</summary>
       <label for="accesorio">Accesorio</label>
-      <div class="combo-wrap">
-        <input id="accesorio" placeholder="Escribí para buscar" autocomplete="off">
-        <button id="accesorioToggle" class="combo-toggle" type="button" aria-label="Mostrar accesorios">⌄</button>
-        <div id="accesoriosResults" class="search-results" hidden></div>
+      <button id="accesorioPicker" class="picker-field" type="button">
+        <span id="accesorioPickerText">Sin accesorio</span>
+        <span class="picker-arrow">⌄</span>
+      </button>
+      <input id="accesorio" type="hidden">
       </div>
 
       <label for="cantidadAccesorio">Cantidad de accesorio</label>
@@ -81,6 +80,15 @@
       <div><span>Mecanismo</span><b id="mecanismoTotal">$ 0</b></div>
       <div><span>Tela</span><b id="telaTotal">$ 0</b></div>
       <div><span>Accesorio</span><b id="accesorioTotal">$ 0</b></div>
+      <div class="calc-subtotal"><span>Subtotal cortina</span><b id="lineSubtotal">$ 0</b></div>
+
+      <div class="inline-discount">
+        <label for="discountPercent">Descuento adicional (%)</label>
+        <input id="discountPercent" type="number" min="0" max="100" step="0.1" value="3">
+        <small class="hint">Los precios ya incluyen un 40% de descuento.</small>
+      </div>
+
+      <div class="discount-preview"><span>Descuento adicional</span><b id="lineDiscount">-$ 0</b></div>
       <div class="total"><span>Total cortina</span><b id="lineTotal">$ 0</b></div>
     </div>
 
@@ -99,16 +107,7 @@
     </div>
 <div><span>Descuento</span><b id="discountAmount">-$ 0</b></div>
     </div>
-
-    <div class="discount-box">
-      <label for="discountPercent">Descuento adicional (%)</label>
-      <input id="discountPercent" type="number" min="0" max="100" step="0.1" value="3">
-      <small class="hint">Los precios ya incluyen un 40% de descuento.</small>
-    </div>
-
-    <div class="budget-summary">
-      <div><span>Subtotal</span><b id="subtotalGeneral">$ 0</b></div>
-      <div><span>Descuento adicional</span><b id="discountAmount">-$ 0</b></div>
+<div><span>Descuento adicional</span><b id="discountAmount">-$ 0</b></div>
     </div>
 
     <div class="grand">
@@ -119,6 +118,21 @@
     <button id="whatsappBtn" class="whatsapp" type="button">Enviar por WhatsApp</button>
   </section>
 </main>
+
+
+<div id="pickerModal" class="picker-modal" hidden>
+  <div class="picker-backdrop"></div>
+  <section class="picker-sheet" role="dialog" aria-modal="true">
+    <div class="picker-header">
+      <h2 id="pickerTitle">Elegir</h2>
+      <button id="pickerClose" class="picker-close" type="button">Cerrar</button>
+    </div>
+    <div class="picker-search-wrap">
+      <input id="pickerSearch" class="picker-search" type="search" placeholder="Buscar..." autocomplete="off">
+    </div>
+    <div id="pickerResults" class="picker-list"></div>
+  </section>
+</div>
 
 <script src="data.js"></script>
 <script src="app.js"></script>
