@@ -134,7 +134,28 @@ function save(){
 }
 
 function render(){
-  budgetLines.innerHTML=state.lines.length?state.lines.map((x,i)=>`<article class="line"><div class="line-head"><span>Cortina ${i+1}</span><span>${money(x.total)}</span></div><div class="line-detail">${x.q} × ${x.w.toFixed(2).replace(".",",")} m × ${x.h.toFixed(2).replace(".",",")} m<br>${esc(x.grupo)} → ${esc(x.m)}<br>${esc(x.subtipo)} → ${esc(x.t)}${x.a?`<br>Accesorio: ${x.aq} × ${esc(x.a)}`:""}${x.discountPct?`<br>Descuento adicional: ${x.discountPct}%`:""}</div><div class="actions"><button class="edit" onclick="editLine(${x.id})">Editar</button><button class="delete" onclick="removeLine(${x.id})">Eliminar</button></div></article>`).join(""):'<p class="empty">Todavía no agregaste ninguna cortina.</p>';
+  budgetLines.innerHTML=state.lines.length?state.lines.map((x,i)=>{
+    const base=x.subtotal!==undefined?x.subtotal:(x.total/(1-(Number(x.discountPct||0)/100)||1));
+    const pct=Number(x.discountPct||0);
+    const discountAmount=base*pct/100;
+    return `<article class="line">
+      <div class="line-head"><span>Cortina ${i+1}</span><span>${money(x.total)}</span></div>
+      <div class="line-detail">
+        ${x.q} × ${x.w.toFixed(2).replace(".",",")} m × ${x.h.toFixed(2).replace(".",",")} m<br>
+        ${esc(x.grupo)} → ${esc(x.m)}<br>
+        ${esc(x.subtipo)} → ${esc(x.t)}
+        ${x.a?`<br>Accesorio: ${x.aq} × ${esc(x.a)}`:""}
+      </div>
+      <div class="actions">
+        <button class="edit" onclick="editLine(${x.id})">Editar</button>
+        <button class="delete" onclick="removeLine(${x.id})">Eliminar</button>
+      </div>
+      <div class="line-discount-row">
+        <span>Descuento adicional (${pct}%)</span>
+        <b>-${money(discountAmount)}</b>
+      </div>
+    </article>`;
+  }).join(""):'<p class="empty">Todavía no agregaste ninguna cortina.</p>';
 
   const total=state.lines.reduce((s,x)=>s+x.total,0);
   grandTotal.textContent=money(total);
@@ -239,15 +260,20 @@ function sendWhatsApp(){
 
   const total=state.lines.reduce((s,x)=>s+x.total,0);
   const msg=["PRESUPUESTO DE CORTINAS","",
-    ...state.lines.flatMap((x,i)=>[
-      `Cortina ${i+1}`,
-      `${x.q} × ${x.w.toFixed(2).replace(".",",")} m × ${x.h.toFixed(2).replace(".",",")} m`,
-      `${x.grupo}: ${x.m}`,
-      `${x.subtipo}: ${x.t}`,
-      x.a?`Accesorio: ${x.aq} × ${x.a}`:"",
-      x.discountPct?`Descuento adicional: ${x.discountPct}%`:"",
-      money(x.total),""
-    ]).filter(Boolean),
+    ...state.lines.flatMap((x,i)=>{
+      const pct=Number(x.discountPct||0);
+      const base=x.subtotal!==undefined?x.subtotal:(x.total/(1-(pct/100)||1));
+      const discountAmount=base*pct/100;
+      return [
+        `Cortina ${i+1}`,
+        `${x.q} × ${x.w.toFixed(2).replace(".",",")} m × ${x.h.toFixed(2).replace(".",",")} m`,
+        `${x.grupo}: ${x.m}`,
+        `${x.subtipo}: ${x.t}`,
+        x.a?`Accesorio: ${x.aq} × ${x.a}`:"",
+        `Descuento adicional (${pct}%): -${money(discountAmount)}`,
+        money(x.total),""
+      ];
+    }).filter(Boolean),
     `TOTAL: ${money(total)}`
   ].join("\\n");
 

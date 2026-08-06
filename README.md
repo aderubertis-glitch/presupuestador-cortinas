@@ -1,8 +1,7 @@
-# Presupuestador de cortinas
+# Corrección de descuento
 
-Mejora de flujo:
-- el descuento adicional (3% por defecto) se ve y se aplica en tiempo real en la cortina actual;
-- se muestra subtotal, importe descontado y total de la cortina antes de agregarla;
-- Agregar cortina sólo incorpora esa cortina al presupuesto y permite luego enviarla por WhatsApp;
-- cada cortina guarda el descuento adicional que tenía al momento de agregarla;
-- mantiene selector modal cómodo para iPhone.
+- Se elimina la fila vieja "Descuento".
+- Se muestra una única fila por cortina:
+  Descuento adicional (X%)    -$ importe
+- El importe en pesos se calcula correctamente.
+- Se mantiene 0% como valor por defecto.

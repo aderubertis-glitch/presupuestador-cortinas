@@ -84,3 +84,10 @@ body.modal-open{overflow:hidden}
 .inline-discount label{display:block;margin:0 0 7px;font-weight:750}
 .inline-discount input{width:100%;min-height:48px}
 .discount-preview{color:var(--danger);font-weight:700}
+
+.line-discount-row{
+  display:flex;justify-content:space-between;gap:12px;
+  margin-top:12px;padding-top:10px;border-top:1px solid var(--line);
+  color:var(--danger)
+}
+.line-discount-row b{white-space:nowrap}
