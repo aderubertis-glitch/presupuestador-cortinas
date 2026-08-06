@@ -1,8 +1,8 @@
 # Presupuestador de cortinas
 
-Configuración comercial:
-- toma siempre Precio sin impuestos;
-- aplica automáticamente 40% de descuento a cada artículo;
-- permite ingresar un descuento adicional manual sobre el total;
-- el descuento adicional arranca en 0%;
-- mantiene buscadores compatibles con iPhone, edición, varias cortinas y WhatsApp.
+Versión combo para iPhone:
+- Mecanismo, Tela y Accesorio tienen flecha propia.
+- Tocar campo o flecha muestra todas las opciones.
+- Escribir filtra los resultados.
+- Si ya hay un valor elegido, al tocar el campo se selecciona para reemplazarlo.
+- Mantiene precio sin IVA, 40% automático y descuento adicional manual.

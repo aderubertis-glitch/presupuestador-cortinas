@@ -31,7 +31,9 @@ function loadFabricTypes(){
 
 function loadMechanisms(){
   mecanismo.value="";
-  mecanismo.disabled=!grupoMecanismo.value;
+  const enabled=!!grupoMecanismo.value;
+  mecanismo.disabled=!enabled;
+  mecanismoToggle.disabled=!enabled;
   mecanismosResults.hidden=true;
   mecanismosResults.innerHTML="";
   calculate();
@@ -39,7 +41,9 @@ function loadMechanisms(){
 
 function loadFabrics(){
   tela.value="";
-  tela.disabled=!subtipoTela.value;
+  const enabled=!!subtipoTela.value;
+  tela.disabled=!enabled;
+  telaToggle.disabled=!enabled;
   telasResults.hidden=true;
   telasResults.innerHTML="";
   calculate();
@@ -50,9 +54,9 @@ function normalized(value){
   return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 }
 
-function showMatches(inputEl, resultsEl, items, forceAll=false, limit=40){
+function showMatches(inputEl,resultsEl,items,showAll=false,limit=60){
   const query=normalized(inputEl.value);
-  const matches=(forceAll||!query
+  const matches=(showAll||!query
     ? items
     : items.filter(item=>normalized(item.descripcion).includes(query))
   ).slice(0,limit);
@@ -75,18 +79,16 @@ function showMatches(inputEl, resultsEl, items, forceAll=false, limit=40){
   });
 }
 
-function openSearch(inputEl, resultsEl, items){
+function openCombo(inputEl,resultsEl,items){
+  if(inputEl.disabled)return;
   if(inputEl.value){
-    try{
-      inputEl.focus();
-      inputEl.setSelectionRange(0,inputEl.value.length);
-    }catch(error){}
+    try{inputEl.setSelectionRange(0,inputEl.value.length)}catch(error){}
   }
   showMatches(inputEl,resultsEl,items,true);
 }
 
 function hideResultsLater(resultsEl){
-  setTimeout(()=>{resultsEl.hidden=true;},150);
+  setTimeout(()=>{resultsEl.hidden=true;},180);
 }
 
 function calculate(){
@@ -240,14 +242,17 @@ subtipoTela.addEventListener("change",loadFabrics);
 mecanismo.addEventListener("input",()=>{showMatches(mecanismo,mecanismosResults,mechanismItems(),false);calculate();});
 tela.addEventListener("input",()=>{showMatches(tela,telasResults,fabricItems(),false);calculate();});
 accesorio.addEventListener("input",()=>{showMatches(accesorio,accesoriosResults,PRODUCTOS.accesorios,false);calculate();});
-mecanismo.addEventListener("focus",()=>openSearch(mecanismo,mecanismosResults,mechanismItems()));
-tela.addEventListener("focus",()=>openSearch(tela,telasResults,fabricItems()));
-accesorio.addEventListener("focus",()=>openSearch(accesorio,accesoriosResults,PRODUCTOS.accesorios));
+mecanismo.addEventListener("focus",()=>openCombo(mecanismo,mecanismosResults,mechanismItems()));
+tela.addEventListener("focus",()=>openCombo(tela,telasResults,fabricItems()));
+accesorio.addEventListener("focus",()=>openCombo(accesorio,accesoriosResults,PRODUCTOS.accesorios));
 mecanismo.addEventListener("blur",()=>hideResultsLater(mecanismosResults));
 tela.addEventListener("blur",()=>hideResultsLater(telasResults));
 accesorio.addEventListener("blur",()=>hideResultsLater(accesoriosResults));
 ["ancho","largo","cantidad","cantidadAccesorio"].forEach(id=>$(id).addEventListener("input",calculate));
 discountPercent.addEventListener("input",()=>{state.discount=Math.min(100,Math.max(0,Number(discountPercent.value)||0));save();render();});
+mecanismoToggle.addEventListener("click",()=>{mecanismo.focus();openCombo(mecanismo,mecanismosResults,mechanismItems());});
+telaToggle.addEventListener("click",()=>{tela.focus();openCombo(tela,telasResults,fabricItems());});
+accesorioToggle.addEventListener("click",()=>{accesorio.focus();openCombo(accesorio,accesoriosResults,PRODUCTOS.accesorios);});
 addBtn.onclick=addLine;
 copyLastBtn.onclick=copyLast;
 whatsappBtn.onclick=sendWhatsApp;
