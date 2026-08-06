@@ -36,14 +36,7 @@ function calc(){
   const w=num(ancho.value),h=num(largo.value),q=Math.max(1,+cantidad.value||1),aq=Math.max(1,+cantidadAccesorio.value||1);
   const mt=m?w*price(m)*q:0,tt=t?w*h*price(t)*q:0,at=a?(a.unidad==="ML"?w*price(a)*aq*q:price(a)*aq*q):0,total=mt+tt+at;
   mecanismoTotal.textContent=money(mt);telaTotal.textContent=money(tt);accesorioTotal.textContent=money(at);lineTotal.textContent=money(total);
-  const warnings=[];
-  if(t?.anchoMaximo){
-    const rollWidth=Number(String(t.anchoMaximo).replace(",",".").match(/[\d.]+/)?.[0]);
-    if(rollWidth&&w>rollWidth&&h>rollWidth){
-      warnings.push(`La tela tiene un ancho de rollo de ${t.anchoMaximo}. Como ambas medidas de la cortina lo superan, no puede confeccionarse en una sola pieza.`);
-    }
-  }
-  warning.hidden=!warnings.length;warning.innerHTML=warnings.map(x=>"⚠️ "+esc(x)).join("<br>");
+  const warningEl=$("warning");if(warningEl){warningEl.hidden=true;warningEl.innerHTML="";}
   return{m,t,a,w,h,q,aq,total};
 }
 function save(){localStorage.setItem("presupuesto_lines",JSON.stringify(state.lines));localStorage.setItem("presupuesto_price_mode",state.priceMode);localStorage.setItem("presupuesto_discount",String(state.discount))}
