@@ -25,7 +25,8 @@ function loadFabricTypes(){
   subtipoTela.disabled=!group;
   subtipoTela.innerHTML=group?option("","Elegir tipo de tela")+types.map(x=>option(x)).join(""):option("","Primero elegí un grupo");
   tela.disabled=true;
-  telasList.innerHTML="";
+  telasResults.hidden=true;
+  telasResults.innerHTML="";
 }
 
 function loadMechanisms(){
@@ -49,15 +50,12 @@ function normalized(value){
   return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 }
 
-function showMatches(inputEl, resultsEl, items, limit=20){
+function showMatches(inputEl, resultsEl, items, forceAll=false, limit=40){
   const query=normalized(inputEl.value);
-  const matches=items.filter(item=>normalized(item.descripcion).includes(query)).slice(0,limit);
-
-  if(!query){
-    resultsEl.hidden=true;
-    resultsEl.innerHTML="";
-    return;
-  }
+  const matches=(forceAll||!query
+    ? items
+    : items.filter(item=>normalized(item.descripcion).includes(query))
+  ).slice(0,limit);
 
   resultsEl.innerHTML=matches.length
     ? matches.map(item=>`<button type="button" class="search-option" data-value="${esc(item.descripcion)}">${esc(item.descripcion)}</button>`).join("")
@@ -66,13 +64,25 @@ function showMatches(inputEl, resultsEl, items, limit=20){
   resultsEl.hidden=false;
 
   resultsEl.querySelectorAll(".search-option").forEach(button=>{
-    button.addEventListener("click",()=>{
+    button.addEventListener("pointerdown",event=>{
+      event.preventDefault();
       inputEl.value=button.dataset.value;
       resultsEl.hidden=true;
       resultsEl.innerHTML="";
       calculate();
+      inputEl.blur();
     });
   });
+}
+
+function openSearch(inputEl, resultsEl, items){
+  if(inputEl.value){
+    try{
+      inputEl.focus();
+      inputEl.setSelectionRange(0,inputEl.value.length);
+    }catch(error){}
+  }
+  showMatches(inputEl,resultsEl,items,true);
 }
 
 function hideResultsLater(resultsEl){
@@ -149,18 +159,38 @@ function addLine(){
     a:c.a?.descripcion||"",
     w:c.w,h:c.h,q:c.q,aq:c.a?c.aq:0,total:c.total
   });
-  save();render();clearEntry(false);ancho.focus();
+  save();render();clearEntry(false);addBtn.textContent="Agregar cortina";ancho.focus();
 }
 
 function removeLine(id){state.lines=state.lines.filter(x=>x.id!==id);save();render()}
 
 function editLine(id){
-  const x=state.lines.find(y=>y.id===id);if(!x)return;
-  grupoMecanismo.value=x.grupo;loadMechanisms();loadFabricTypes();mecanismo.value=x.m;
-  subtipoTela.value=x.subtipo;loadFabrics();tela.value=x.t;
-  ancho.value=String(x.w).replace(".",",");largo.value=String(x.h).replace(".",",");cantidad.value=x.q;
-  accesorio.value=x.a;cantidadAccesorio.value=x.aq||1;
-  removeLine(id);calculate();scrollTo({top:0,behavior:"smooth"});
+  const x=state.lines.find(item=>item.id===id);
+  if(!x)return;
+
+  grupoMecanismo.value=x.grupo;
+  loadMechanisms();
+  loadFabricTypes();
+
+  mecanismo.value=x.m;
+  subtipoTela.value=x.subtipo;
+  loadFabrics();
+  tela.value=x.t;
+
+  ancho.value=String(x.w).replace(".",",");
+  largo.value=String(x.h).replace(".",",");
+  cantidad.value=x.q;
+  accesorio.value=x.a||"";
+  cantidadAccesorio.value=x.aq||1;
+
+  state.lines=state.lines.filter(item=>item.id!==id);
+  save();
+  render();
+  calculate();
+
+  addBtn.textContent="Guardar cambios";
+  window.scrollTo({top:0,behavior:"smooth"});
+  setTimeout(()=>ancho.focus(),350);
 }
 
 function copyLast(){
@@ -174,7 +204,7 @@ function copyLast(){
 
 function newBudget(){
   if(!state.lines.length||confirm("¿Empezar un presupuesto nuevo?")){
-    state.lines=[];state.discount=0;discountPercent.value=0;save();render();clearEntry(true);
+    state.lines=[];state.discount=0;discountPercent.value=0;save();render();clearEntry(true);addBtn.textContent="Agregar cortina";
   }
 }
 
@@ -203,12 +233,12 @@ function sendWhatsApp(){
 
 grupoMecanismo.addEventListener("change",()=>{loadMechanisms();loadFabricTypes();calculate();});
 subtipoTela.addEventListener("change",loadFabrics);
-mecanismo.addEventListener("input",()=>{showMatches(mecanismo,mecanismosResults,mechanismItems());calculate();});
-tela.addEventListener("input",()=>{showMatches(tela,telasResults,fabricItems());calculate();});
-accesorio.addEventListener("input",()=>{showMatches(accesorio,accesoriosResults,PRODUCTOS.accesorios);calculate();});
-mecanismo.addEventListener("focus",()=>showMatches(mecanismo,mecanismosResults,mechanismItems()));
-tela.addEventListener("focus",()=>showMatches(tela,telasResults,fabricItems()));
-accesorio.addEventListener("focus",()=>showMatches(accesorio,accesoriosResults,PRODUCTOS.accesorios));
+mecanismo.addEventListener("input",()=>{showMatches(mecanismo,mecanismosResults,mechanismItems(),false);calculate();});
+tela.addEventListener("input",()=>{showMatches(tela,telasResults,fabricItems(),false);calculate();});
+accesorio.addEventListener("input",()=>{showMatches(accesorio,accesoriosResults,PRODUCTOS.accesorios,false);calculate();});
+mecanismo.addEventListener("focus",()=>openSearch(mecanismo,mecanismosResults,mechanismItems()));
+tela.addEventListener("focus",()=>openSearch(tela,telasResults,fabricItems()));
+accesorio.addEventListener("focus",()=>openSearch(accesorio,accesoriosResults,PRODUCTOS.accesorios));
 mecanismo.addEventListener("blur",()=>hideResultsLater(mecanismosResults));
 tela.addEventListener("blur",()=>hideResultsLater(telasResults));
 accesorio.addEventListener("blur",()=>hideResultsLater(accesoriosResults));
