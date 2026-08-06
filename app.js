@@ -6,36 +6,38 @@ const num=v=>Number(String(v||"").trim().replace(/\./g,"").replace(",","."))||0;
 const price=i=>state.priceMode==="conIVA"?i?.precioConIVA||0:i?.precioSinIVA||0;
 const unique=a=>[...new Set(a.filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
 const option=(value,text=value)=>`<option value="${esc(value)}">${esc(text)}</option>`;
+const exact=(list,value)=>list.find(x=>x.descripcion===value)||null;
 
 function init(){
   grupoMecanismo.innerHTML=option("","Elegir grupo")+unique(PRODUCTOS.mecanismos.map(x=>x.grupo)).map(x=>option(x)).join("");
   subtipoTela.innerHTML=option("","Elegir tipo de tela")+unique(PRODUCTOS.telas.map(x=>x.subtipo)).map(x=>option(x)).join("");
-  accesorio.innerHTML=option("","Sin accesorio")+PRODUCTOS.accesorios.map(x=>option(x.descripcion)).join("");
+  accesoriosList.innerHTML=PRODUCTOS.accesorios.map(x=>`<option value="${esc(x.descripcion)}"></option>`).join("");
   discountPercent.value=state.discount;
 }
 
-function selected(list,description){return list.find(x=>x.descripcion===description)||null}
+function mechanismItems(){return PRODUCTOS.mecanismos.filter(x=>x.grupo===grupoMecanismo.value)}
+function fabricItems(){return PRODUCTOS.telas.filter(x=>x.subtipo===subtipoTela.value)}
 
 function loadMechanisms(){
-  const group=grupoMecanismo.value;
-  const items=PRODUCTOS.mecanismos.filter(x=>x.grupo===group);
-  mecanismo.disabled=!group;
-  mecanismo.innerHTML=group?option("","Elegir mecanismo")+items.map(x=>option(x.descripcion)).join(""):option("","Primero elegí un grupo");
+  mecanismo.value="";
+  const items=mechanismItems();
+  mecanismo.disabled=!grupoMecanismo.value;
+  mecanismosList.innerHTML=items.map(x=>`<option value="${esc(x.descripcion)}"></option>`).join("");
   calculate();
 }
 
 function loadFabrics(){
-  const subtype=subtipoTela.value;
-  const items=PRODUCTOS.telas.filter(x=>x.subtipo===subtype);
-  tela.disabled=!subtype;
-  tela.innerHTML=subtype?option("","Elegir tela")+items.map(x=>option(x.descripcion)).join(""):option("","Primero elegí un tipo de tela");
+  tela.value="";
+  const items=fabricItems();
+  tela.disabled=!subtipoTela.value;
+  telasList.innerHTML=items.map(x=>`<option value="${esc(x.descripcion)}"></option>`).join("");
   calculate();
 }
 
 function calculate(){
-  const m=selected(PRODUCTOS.mecanismos,mecanismo.value);
-  const t=selected(PRODUCTOS.telas,tela.value);
-  const a=selected(PRODUCTOS.accesorios,accesorio.value);
+  const m=exact(mechanismItems(),mecanismo.value);
+  const t=exact(fabricItems(),tela.value);
+  const a=exact(PRODUCTOS.accesorios,accesorio.value);
   const w=num(ancho.value),h=num(largo.value),q=Math.max(1,+cantidad.value||1),aq=Math.max(1,+cantidadAccesorio.value||1);
   const mt=m?w*price(m)*q:0;
   const tt=t?w*h*price(t)*q:0;
@@ -88,9 +90,9 @@ function clearEntry(resetSelectors=false){
 function addLine(){
   const c=calculate();
   if(!grupoMecanismo.value)return alert("Elegí el grupo del mecanismo.");
-  if(!c.m)return alert("Elegí un mecanismo.");
+  if(!c.m)return alert("Elegí un mecanismo de los resultados.");
   if(!subtipoTela.value)return alert("Elegí el tipo de tela.");
-  if(!c.t)return alert("Elegí una tela.");
+  if(!c.t)return alert("Elegí una tela de los resultados.");
   if(c.w<=0||c.h<=0)return alert("Ingresá ancho y largo.");
 
   state.lines.push({

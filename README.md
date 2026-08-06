@@ -1,15 +1,11 @@
 # Presupuestador de cortinas
 
-Versión limpia y estable.
+Versión con buscadores para mecanismos, telas y accesorios.
 
-Incluye:
-- grupo de mecanismo y mecanismo;
-- tipo de tela y tela;
-- medidas y cantidad;
-- accesorios opcionales;
+Se mantiene:
+- filtro por grupo de mecanismo;
+- filtro por tipo de tela;
 - varias cortinas;
 - descuento;
 - WhatsApp;
 - diseño verde y blanco.
-
-No incluye validaciones de medidas ni PDF.

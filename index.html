@@ -30,9 +30,9 @@
     </select>
 
     <label for="mecanismo">Mecanismo</label>
-    <select id="mecanismo" disabled>
-      <option value="">Primero elegí un grupo</option>
-    </select>
+    <input id="mecanismo" list="mecanismosList" placeholder="Escribí para buscar" autocomplete="off" disabled>
+    <datalist id="mecanismosList"></datalist>
+    <small class="hint">Podés escribir, por ejemplo: 32, cadena, metálica…</small>
 
     <label for="subtipoTela">Tipo de tela</label>
     <select id="subtipoTela">
@@ -40,9 +40,9 @@
     </select>
 
     <label for="tela">Tela</label>
-    <select id="tela" disabled>
-      <option value="">Primero elegí un tipo de tela</option>
-    </select>
+    <input id="tela" list="telasList" placeholder="Escribí para buscar" autocomplete="off" disabled>
+    <datalist id="telasList"></datalist>
+    <small class="hint">Podés escribir, por ejemplo: Hampton, Berlín, 5%…</small>
 
     <div class="grid">
       <div>
@@ -61,9 +61,8 @@
     <details>
       <summary>Agregar accesorio (opcional)</summary>
       <label for="accesorio">Accesorio</label>
-      <select id="accesorio">
-        <option value="">Sin accesorio</option>
-      </select>
+      <input id="accesorio" list="accesoriosList" placeholder="Escribí para buscar" autocomplete="off">
+      <datalist id="accesoriosList"></datalist>
 
       <label for="cantidadAccesorio">Cantidad de accesorio</label>
       <input id="cantidadAccesorio" type="number" min="1" value="1">
