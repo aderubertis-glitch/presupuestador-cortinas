@@ -231,8 +231,7 @@ function sendWhatsApp(){
     ]).filter(Boolean),
     ...extra,
     `TOTAL: ${money(total)}`
-  ].join("
-");
+  ].join("\n");
 
   open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 }
