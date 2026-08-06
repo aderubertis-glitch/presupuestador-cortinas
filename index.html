@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#24445f">
+  <meta name="theme-color" content="#0b6b3a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Presupuestos">
   <link rel="manifest" href="manifest.json">
@@ -30,8 +30,9 @@
     </select>
 
     <label for="mecanismo">Mecanismo</label>
-    <input id="mecanismo" list="mecanismosList" placeholder="Buscar mecanismo" autocomplete="off" disabled>
-    <datalist id="mecanismosList"></datalist>
+    <select id="mecanismo" disabled>
+      <option value="">Primero elegí un grupo</option>
+    </select>
 
     <label for="subtipoTela">Tipo de tela</label>
     <select id="subtipoTela">
@@ -39,8 +40,9 @@
     </select>
 
     <label for="tela">Tela</label>
-    <input id="tela" list="telasList" placeholder="Buscar tela" autocomplete="off" disabled>
-    <datalist id="telasList"></datalist>
+    <select id="tela" disabled>
+      <option value="">Primero elegí un tipo de tela</option>
+    </select>
 
     <div class="grid">
       <div>
@@ -59,14 +61,13 @@
     <details>
       <summary>Agregar accesorio (opcional)</summary>
       <label for="accesorio">Accesorio</label>
-      <input id="accesorio" list="accesoriosList" placeholder="Buscar accesorio" autocomplete="off">
-      <datalist id="accesoriosList"></datalist>
+      <select id="accesorio">
+        <option value="">Sin accesorio</option>
+      </select>
 
       <label for="cantidadAccesorio">Cantidad de accesorio</label>
       <input id="cantidadAccesorio" type="number" min="1" value="1">
     </details>
-
-    
 
     <div class="calc">
       <div><span>Mecanismo</span><b id="mecanismoTotal">$ 0</b></div>
@@ -91,7 +92,7 @@
 
     <div class="discount-box">
       <label for="discountPercent">Descuento a aplicar (%)</label>
-      <input id="discountPercent" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="0" placeholder="Ej.: 10">
+      <input id="discountPercent" type="number" min="0" max="100" step="0.1" value="0">
     </div>
 
     <div class="budget-summary">

@@ -1,14 +1,15 @@
-# Presupuestador de cortinas — versión estable
+# Presupuestador de cortinas
+
+Versión limpia y estable.
 
 Incluye:
-- filtro por grupo de mecanismo;
-- filtro por tipo de tela;
-- cálculo de mecanismo por metro lineal;
-- cálculo de tela por metro cuadrado;
+- grupo de mecanismo y mecanismo;
+- tipo de tela y tela;
+- medidas y cantidad;
 - accesorios opcionales;
 - varias cortinas;
-- descuento sobre el total;
-- envío por WhatsApp;
+- descuento;
+- WhatsApp;
 - diseño verde y blanco.
 
 No incluye validaciones de medidas ni PDF.
