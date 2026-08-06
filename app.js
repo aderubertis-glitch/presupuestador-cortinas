@@ -10,13 +10,24 @@ const exact=(list,value)=>list.find(x=>x.descripcion===value)||null;
 
 function init(){
   grupoMecanismo.innerHTML=option("","Elegir grupo")+unique(PRODUCTOS.mecanismos.map(x=>x.grupo)).map(x=>option(x)).join("");
-  subtipoTela.innerHTML=option("","Elegir tipo de tela")+unique(PRODUCTOS.telas.map(x=>x.subtipo)).map(x=>option(x)).join("");
+  subtipoTela.innerHTML=option("","Primero elegí un grupo");
+  subtipoTela.disabled=true;
   accesoriosList.innerHTML=PRODUCTOS.accesorios.map(x=>`<option value="${esc(x.descripcion)}"></option>`).join("");
   discountPercent.value=state.discount;
 }
 
 function mechanismItems(){return PRODUCTOS.mecanismos.filter(x=>x.grupo===grupoMecanismo.value)}
-function fabricItems(){return PRODUCTOS.telas.filter(x=>x.subtipo===subtipoTela.value)}
+function fabricItems(){return PRODUCTOS.telas.filter(x=>x.grupo===grupoMecanismo.value&&x.subtipo===subtipoTela.value)}
+function loadFabricTypes(){
+  subtipoTela.value="";
+  tela.value="";
+  const group=grupoMecanismo.value;
+  const types=unique(PRODUCTOS.telas.filter(x=>x.grupo===group).map(x=>x.subtipo));
+  subtipoTela.disabled=!group;
+  subtipoTela.innerHTML=group?option("","Elegir tipo de tela")+types.map(x=>option(x)).join(""):option("","Primero elegí un grupo");
+  tela.disabled=true;
+  telasList.innerHTML="";
+}
 
 function loadMechanisms(){
   mecanismo.value="";
@@ -75,8 +86,8 @@ function render(){
 function clearEntry(resetSelectors=false){
   if(resetSelectors){
     grupoMecanismo.value="";
-    subtipoTela.value="";
     loadMechanisms();
+    loadFabricTypes();
     loadFabrics();
   }
   ancho.value="";
@@ -111,7 +122,7 @@ function removeLine(id){state.lines=state.lines.filter(x=>x.id!==id);save();rend
 
 function editLine(id){
   const x=state.lines.find(y=>y.id===id);if(!x)return;
-  grupoMecanismo.value=x.grupo;loadMechanisms();mecanismo.value=x.m;
+  grupoMecanismo.value=x.grupo;loadMechanisms();loadFabricTypes();mecanismo.value=x.m;
   subtipoTela.value=x.subtipo;loadFabrics();tela.value=x.t;
   ancho.value=String(x.w).replace(".",",");largo.value=String(x.h).replace(".",",");cantidad.value=x.q;
   accesorio.value=x.a;cantidadAccesorio.value=x.aq||1;
@@ -120,7 +131,7 @@ function editLine(id){
 
 function copyLast(){
   const x=state.lines.at(-1);if(!x)return alert("Todavía no hay una cortina para copiar.");
-  grupoMecanismo.value=x.grupo;loadMechanisms();mecanismo.value=x.m;
+  grupoMecanismo.value=x.grupo;loadMechanisms();loadFabricTypes();mecanismo.value=x.m;
   subtipoTela.value=x.subtipo;loadFabrics();tela.value=x.t;
   ancho.value=String(x.w).replace(".",",");largo.value=String(x.h).replace(".",",");cantidad.value=x.q;
   accesorio.value=x.a;cantidadAccesorio.value=x.aq||1;
@@ -156,7 +167,7 @@ function sendWhatsApp(){
   open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 }
 
-grupoMecanismo.addEventListener("change",loadMechanisms);
+grupoMecanismo.addEventListener("change",()=>{loadMechanisms();loadFabricTypes();calculate();});
 subtipoTela.addEventListener("change",loadFabrics);
 ["mecanismo","tela","ancho","largo","cantidad","accesorio","cantidadAccesorio"].forEach(id=>$(id).addEventListener("input",calculate));
 discountPercent.addEventListener("input",()=>{state.discount=Math.min(100,Math.max(0,Number(discountPercent.value)||0));save();render()});
@@ -167,5 +178,5 @@ newBudgetBtn.onclick=newBudget;
 withVatBtn.onclick=()=>changeMode("conIVA");
 withoutVatBtn.onclick=()=>changeMode("sinIVA");
 
-init();render();calculate();
+init();loadMechanisms();loadFabricTypes();loadFabrics();render();calculate();
 if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js").catch(()=>{});
