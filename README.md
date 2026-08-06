@@ -1,7 +1,9 @@
 # Presupuestador de cortinas
 
-Correcciones:
-- descuento adicional predeterminado: 3%;
-- el importe descontado se muestra correctamente;
-- se eliminó el renglón viejo de Descuento -$0;
-- el total sigue calculándose sobre precios sin IVA con 40% automático.
+Versión final combinada:
+- mantiene combos con flecha + búsqueda para Mecanismo, Tela y Accesorio;
+- usa Precio sin IVA;
+- aplica 40% automático a cada artículo;
+- descuento adicional manual, 3% por defecto;
+- muestra correctamente el importe descontado;
+- edición, eliminación, varias cortinas y WhatsApp.

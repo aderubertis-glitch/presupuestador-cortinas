@@ -31,7 +31,9 @@ function loadFabricTypes(){
 
 function loadMechanisms(){
   mecanismo.value="";
-  mecanismo.disabled=!grupoMecanismo.value;
+  const enabled=!!grupoMecanismo.value;
+  mecanismo.disabled=!enabled;
+  mecanismoToggle.disabled=!enabled;
   mecanismosResults.hidden=true;
   mecanismosResults.innerHTML="";
   calculate();
@@ -39,7 +41,9 @@ function loadMechanisms(){
 
 function loadFabrics(){
   tela.value="";
-  tela.disabled=!subtipoTela.value;
+  const enabled=!!subtipoTela.value;
+  tela.disabled=!enabled;
+  telaToggle.disabled=!enabled;
   telasResults.hidden=true;
   telasResults.innerHTML="";
   calculate();
@@ -50,9 +54,9 @@ function normalized(value){
   return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 }
 
-function showMatches(inputEl, resultsEl, items, forceAll=false, limit=40){
+function showMatches(inputEl,resultsEl,items,showAll=false,limit=60){
   const query=normalized(inputEl.value);
-  const matches=(forceAll||!query
+  const matches=(showAll||!query
     ? items
     : items.filter(item=>normalized(item.descripcion).includes(query))
   ).slice(0,limit);
@@ -75,18 +79,16 @@ function showMatches(inputEl, resultsEl, items, forceAll=false, limit=40){
   });
 }
 
-function openSearch(inputEl, resultsEl, items){
+function openCombo(inputEl,resultsEl,items){
+  if(inputEl.disabled)return;
   if(inputEl.value){
-    try{
-      inputEl.focus();
-      inputEl.setSelectionRange(0,inputEl.value.length);
-    }catch(error){}
+    try{inputEl.setSelectionRange(0,inputEl.value.length)}catch(error){}
   }
   showMatches(inputEl,resultsEl,items,true);
 }
 
 function hideResultsLater(resultsEl){
-  setTimeout(()=>{resultsEl.hidden=true;},150);
+  setTimeout(()=>{resultsEl.hidden=true;},180);
 }
 
 function calculate(){
@@ -105,7 +107,10 @@ function calculate(){
   return{m,t,a,w,h,q,aq,total};
 }
 
-function save(){localStorage.setItem("presupuesto_lines",JSON.stringify(state.lines));localStorage.setItem("presupuesto_discount",String(state.discount));}
+function save(){
+  localStorage.setItem("presupuesto_lines",JSON.stringify(state.lines));
+  localStorage.setItem("presupuesto_discount",String(state.discount));
+}
 
 function render(){
   budgetLines.innerHTML=state.lines.length?state.lines.map((x,i)=>`<article class="line"><div class="line-head"><span>Cortina ${i+1}</span><span>${money(x.total)}</span></div><div class="line-detail">${x.q} × ${x.w.toFixed(2).replace(".",",")} m × ${x.h.toFixed(2).replace(".",",")} m<br>${esc(x.grupo)} → ${esc(x.m)}<br>${esc(x.subtipo)} → ${esc(x.t)}${x.a?`<br>Accesorio: ${x.aq} × ${esc(x.a)}`:""}</div><div class="actions"><button class="edit" onclick="editLine(${x.id})">Editar</button><button class="delete" onclick="removeLine(${x.id})">Eliminar</button></div></article>`).join(""):'<p class="empty">Todavía no agregaste ninguna cortina.</p>';
@@ -201,7 +206,7 @@ function newBudget(){
   if(!state.lines.length||confirm("¿Empezar un presupuesto nuevo?")){
     state.lines=[];
     state.discount=3;
-    discountPercent.value=3;
+    if($("discountPercent")) $("discountPercent").value=3;
     save();
     render();
     clearEntry(true);
@@ -229,8 +234,7 @@ function sendWhatsApp(){
     ]).filter(Boolean),
     ...extra,
     `TOTAL: ${money(total)}`
-  ].join("
-");
+  ].join("\\n");
 
   open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 }
@@ -240,14 +244,17 @@ subtipoTela.addEventListener("change",loadFabrics);
 mecanismo.addEventListener("input",()=>{showMatches(mecanismo,mecanismosResults,mechanismItems(),false);calculate();});
 tela.addEventListener("input",()=>{showMatches(tela,telasResults,fabricItems(),false);calculate();});
 accesorio.addEventListener("input",()=>{showMatches(accesorio,accesoriosResults,PRODUCTOS.accesorios,false);calculate();});
-mecanismo.addEventListener("focus",()=>openSearch(mecanismo,mecanismosResults,mechanismItems()));
-tela.addEventListener("focus",()=>openSearch(tela,telasResults,fabricItems()));
-accesorio.addEventListener("focus",()=>openSearch(accesorio,accesoriosResults,PRODUCTOS.accesorios));
+mecanismo.addEventListener("focus",()=>openCombo(mecanismo,mecanismosResults,mechanismItems()));
+tela.addEventListener("focus",()=>openCombo(tela,telasResults,fabricItems()));
+accesorio.addEventListener("focus",()=>openCombo(accesorio,accesoriosResults,PRODUCTOS.accesorios));
 mecanismo.addEventListener("blur",()=>hideResultsLater(mecanismosResults));
 tela.addEventListener("blur",()=>hideResultsLater(telasResults));
 accesorio.addEventListener("blur",()=>hideResultsLater(accesoriosResults));
 ["ancho","largo","cantidad","cantidadAccesorio"].forEach(id=>$(id).addEventListener("input",calculate));
 discountPercent.addEventListener("input",()=>{state.discount=Math.min(100,Math.max(0,Number(discountPercent.value)||0));save();render();});
+mecanismoToggle.addEventListener("click",()=>{mecanismo.focus();openCombo(mecanismo,mecanismosResults,mechanismItems());});
+telaToggle.addEventListener("click",()=>{tela.focus();openCombo(tela,telasResults,fabricItems());});
+accesorioToggle.addEventListener("click",()=>{accesorio.focus();openCombo(accesorio,accesoriosResults,PRODUCTOS.accesorios);});
 addBtn.onclick=addLine;
 copyLastBtn.onclick=copyLast;
 whatsappBtn.onclick=sendWhatsApp;
