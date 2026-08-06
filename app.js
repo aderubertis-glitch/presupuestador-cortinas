@@ -12,7 +12,6 @@ function init(){
   grupoMecanismo.innerHTML=option("","Elegir grupo")+unique(PRODUCTOS.mecanismos.map(x=>x.grupo)).map(x=>option(x)).join("");
   subtipoTela.innerHTML=option("","Primero elegí un grupo");
   subtipoTela.disabled=true;
-  accesoriosList.innerHTML=PRODUCTOS.accesorios.map(x=>`<option value="${esc(x.descripcion)}"></option>`).join("");
   discountPercent.value=state.discount;
 }
 
@@ -31,18 +30,53 @@ function loadFabricTypes(){
 
 function loadMechanisms(){
   mecanismo.value="";
-  const items=mechanismItems();
   mecanismo.disabled=!grupoMecanismo.value;
-  mecanismosList.innerHTML=items.map(x=>`<option value="${esc(x.descripcion)}"></option>`).join("");
+  mecanismosResults.hidden=true;
+  mecanismosResults.innerHTML="";
   calculate();
 }
 
 function loadFabrics(){
   tela.value="";
-  const items=fabricItems();
   tela.disabled=!subtipoTela.value;
-  telasList.innerHTML=items.map(x=>`<option value="${esc(x.descripcion)}"></option>`).join("");
+  telasResults.hidden=true;
+  telasResults.innerHTML="";
   calculate();
+}
+
+
+function normalized(value){
+  return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+}
+
+function showMatches(inputEl, resultsEl, items, limit=20){
+  const query=normalized(inputEl.value);
+  const matches=items.filter(item=>normalized(item.descripcion).includes(query)).slice(0,limit);
+
+  if(!query){
+    resultsEl.hidden=true;
+    resultsEl.innerHTML="";
+    return;
+  }
+
+  resultsEl.innerHTML=matches.length
+    ? matches.map(item=>`<button type="button" class="search-option" data-value="${esc(item.descripcion)}">${esc(item.descripcion)}</button>`).join("")
+    : '<div class="search-empty">No se encontraron resultados.</div>';
+
+  resultsEl.hidden=false;
+
+  resultsEl.querySelectorAll(".search-option").forEach(button=>{
+    button.addEventListener("click",()=>{
+      inputEl.value=button.dataset.value;
+      resultsEl.hidden=true;
+      resultsEl.innerHTML="";
+      calculate();
+    });
+  });
+}
+
+function hideResultsLater(resultsEl){
+  setTimeout(()=>{resultsEl.hidden=true;},150);
 }
 
 function calculate(){
@@ -169,7 +203,16 @@ function sendWhatsApp(){
 
 grupoMecanismo.addEventListener("change",()=>{loadMechanisms();loadFabricTypes();calculate();});
 subtipoTela.addEventListener("change",loadFabrics);
-["mecanismo","tela","ancho","largo","cantidad","accesorio","cantidadAccesorio"].forEach(id=>$(id).addEventListener("input",calculate));
+mecanismo.addEventListener("input",()=>{showMatches(mecanismo,mecanismosResults,mechanismItems());calculate();});
+tela.addEventListener("input",()=>{showMatches(tela,telasResults,fabricItems());calculate();});
+accesorio.addEventListener("input",()=>{showMatches(accesorio,accesoriosResults,PRODUCTOS.accesorios);calculate();});
+mecanismo.addEventListener("focus",()=>showMatches(mecanismo,mecanismosResults,mechanismItems()));
+tela.addEventListener("focus",()=>showMatches(tela,telasResults,fabricItems()));
+accesorio.addEventListener("focus",()=>showMatches(accesorio,accesoriosResults,PRODUCTOS.accesorios));
+mecanismo.addEventListener("blur",()=>hideResultsLater(mecanismosResults));
+tela.addEventListener("blur",()=>hideResultsLater(telasResults));
+accesorio.addEventListener("blur",()=>hideResultsLater(accesoriosResults));
+["ancho","largo","cantidad","cantidadAccesorio"].forEach(id=>$(id).addEventListener("input",calculate));
 discountPercent.addEventListener("input",()=>{state.discount=Math.min(100,Math.max(0,Number(discountPercent.value)||0));save();render()});
 addBtn.onclick=addLine;
 copyLastBtn.onclick=copyLast;

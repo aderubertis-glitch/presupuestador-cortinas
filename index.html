@@ -30,9 +30,11 @@
     </select>
 
     <label for="mecanismo">Mecanismo</label>
-    <input id="mecanismo" list="mecanismosList" placeholder="Escribí para buscar" autocomplete="off" disabled>
-    <datalist id="mecanismosList"></datalist>
-    <small class="hint">Podés escribir, por ejemplo: 32, cadena, metálica…</small>
+    <div class="search-wrap">
+      <input id="mecanismo" placeholder="Escribí para buscar" autocomplete="off" disabled>
+      <div id="mecanismosResults" class="search-results" hidden></div>
+    </div>
+    <small class="hint">Escribí, por ejemplo: 32, cadena, metálica… y tocá una opción.</small>
 
     <label for="subtipoTela">Tipo de tela del grupo elegido</label>
     <select id="subtipoTela">
@@ -40,9 +42,11 @@
     </select>
 
     <label for="tela">Tela</label>
-    <input id="tela" list="telasList" placeholder="Escribí para buscar" autocomplete="off" disabled>
-    <datalist id="telasList"></datalist>
-    <small class="hint">Podés escribir, por ejemplo: Hampton, Berlín, 5%…</small>
+    <div class="search-wrap">
+      <input id="tela" placeholder="Escribí para buscar" autocomplete="off" disabled>
+      <div id="telasResults" class="search-results" hidden></div>
+    </div>
+    <small class="hint">Escribí, por ejemplo: Hampton, Berlín, 5%… y tocá una opción.</small>
 
     <div class="grid">
       <div>
@@ -61,8 +65,10 @@
     <details>
       <summary>Agregar accesorio (opcional)</summary>
       <label for="accesorio">Accesorio</label>
-      <input id="accesorio" list="accesoriosList" placeholder="Escribí para buscar" autocomplete="off">
-      <datalist id="accesoriosList"></datalist>
+      <div class="search-wrap">
+        <input id="accesorio" placeholder="Escribí para buscar" autocomplete="off">
+        <div id="accesoriosResults" class="search-results" hidden></div>
+      </div>
 
       <label for="cantidadAccesorio">Cantidad de accesorio</label>
       <input id="cantidadAccesorio" type="number" min="1" value="1">
