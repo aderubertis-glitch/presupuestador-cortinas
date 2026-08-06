@@ -1,3 +1,3 @@
 # Presupuestador de cortinas
 
-Aplicación web para calcular una o varias cortinas y compartir el presupuesto por WhatsApp.
+Versión con filtros por grupo de mecanismo y subtipo de tela.
