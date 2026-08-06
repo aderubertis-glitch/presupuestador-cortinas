@@ -15,9 +15,9 @@
 <header>
   <div>
     <h1>Presupuestador</h1>
-    <p id="priceModeText">Precios con IVA</p>
+    <p>Precio sin IVA con 40% de descuento</p>
   </div>
-  <button id="newBudgetBtn" type="button">Nuevo</button>
+  <button id="newBudgetBtn" type="button">Nuevo presupuesto</button>
 </header>
 
 <main>
@@ -94,31 +94,26 @@
     <div id="budgetLines">
       <p class="empty">Todavía no agregaste ninguna cortina.</p>
     </div>
+<div><span>Descuento</span><b id="discountAmount">-$ 0</b></div>
+    </div>
 
     <div class="discount-box">
-      <label for="discountPercent">Descuento a aplicar (%)</label>
+      <label for="discountPercent">Descuento adicional (%)</label>
       <input id="discountPercent" type="number" min="0" max="100" step="0.1" value="0">
+      <small class="hint">Los precios ya incluyen un 40% de descuento.</small>
     </div>
 
     <div class="budget-summary">
       <div><span>Subtotal</span><b id="subtotalGeneral">$ 0</b></div>
-      <div><span>Descuento</span><b id="discountAmount">-$ 0</b></div>
+      <div><span>Descuento adicional</span><b id="discountAmount">-$ 0</b></div>
     </div>
 
     <div class="grand">
-      <span>Total final</span>
+      <span>Total presupuesto</span>
       <b id="grandTotal">$ 0</b>
     </div>
 
     <button id="whatsappBtn" class="whatsapp" type="button">Enviar por WhatsApp</button>
-  </section>
-
-  <section class="card">
-    <h2>Precio utilizado</h2>
-    <div class="toggle">
-      <button id="withVatBtn" class="active" type="button">Con IVA</button>
-      <button id="withoutVatBtn" type="button">Sin IVA</button>
-    </div>
   </section>
 </main>
 

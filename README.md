@@ -1,7 +1,8 @@
 # Presupuestador de cortinas
 
-Correcciones para iPhone:
-- tocar un buscador vacío muestra todas las opciones;
-- tocar un artículo elegido selecciona todo el texto y muestra la lista;
-- se puede cambiar el artículo sin borrarlo manualmente;
-- el botón Editar vuelve a cargar correctamente la cortina.
+Configuración comercial:
+- toma siempre Precio sin impuestos;
+- aplica automáticamente 40% de descuento a cada artículo;
+- permite ingresar un descuento adicional manual sobre el total;
+- el descuento adicional arranca en 0%;
+- mantiene buscadores compatibles con iPhone, edición, varias cortinas y WhatsApp.

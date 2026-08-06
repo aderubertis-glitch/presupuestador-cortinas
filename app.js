@@ -1,18 +1,18 @@
 const $=id=>document.getElementById(id);
-const state={lines:JSON.parse(localStorage.getItem("presupuesto_lines")||"[]"),priceMode:localStorage.getItem("presupuesto_price_mode")||"conIVA",discount:Number(localStorage.getItem("presupuesto_discount")||0)};
+const state={lines:JSON.parse(localStorage.getItem("presupuesto_lines")||"[]"),discount:Number(localStorage.getItem("presupuesto_discount")||0)};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const money=n=>new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS",maximumFractionDigits:0}).format(n||0);
 const num=v=>Number(String(v||"").trim().replace(/\./g,"").replace(",","."))||0;
-const price=i=>state.priceMode==="conIVA"?i?.precioConIVA||0:i?.precioSinIVA||0;
+const price=i=>(i?.precioSinIVA||0)*0.60;
 const unique=a=>[...new Set(a.filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
 const option=(value,text=value)=>`<option value="${esc(value)}">${esc(text)}</option>`;
 const exact=(list,value)=>list.find(x=>x.descripcion===value)||null;
 
 function init(){
+  discountPercent.value=state.discount;
   grupoMecanismo.innerHTML=option("","Elegir grupo")+unique(PRODUCTOS.mecanismos.map(x=>x.grupo)).map(x=>option(x)).join("");
   subtipoTela.innerHTML=option("","Primero elegí un grupo");
   subtipoTela.disabled=true;
-  discountPercent.value=state.discount;
 }
 
 function mechanismItems(){return PRODUCTOS.mecanismos.filter(x=>x.grupo===grupoMecanismo.value)}
@@ -105,11 +105,7 @@ function calculate(){
   return{m,t,a,w,h,q,aq,total};
 }
 
-function save(){
-  localStorage.setItem("presupuesto_lines",JSON.stringify(state.lines));
-  localStorage.setItem("presupuesto_price_mode",state.priceMode);
-  localStorage.setItem("presupuesto_discount",String(state.discount));
-}
+function save(){localStorage.setItem("presupuesto_lines",JSON.stringify(state.lines));localStorage.setItem("presupuesto_discount",String(state.discount));}
 
 function render(){
   budgetLines.innerHTML=state.lines.length?state.lines.map((x,i)=>`<article class="line"><div class="line-head"><span>Cortina ${i+1}</span><span>${money(x.total)}</span></div><div class="line-detail">${x.q} × ${x.w.toFixed(2).replace(".",",")} m × ${x.h.toFixed(2).replace(".",",")} m<br>${esc(x.grupo)} → ${esc(x.m)}<br>${esc(x.subtipo)} → ${esc(x.t)}${x.a?`<br>Accesorio: ${x.aq} × ${esc(x.a)}`:""}</div><div class="actions"><button class="edit" onclick="editLine(${x.id})">Editar</button><button class="delete" onclick="removeLine(${x.id})">Eliminar</button></div></article>`).join(""):'<p class="empty">Todavía no agregaste ninguna cortina.</p>';
@@ -117,14 +113,13 @@ function render(){
   const subtotal=state.lines.reduce((s,x)=>s+x.total,0);
   const pct=Math.min(100,Math.max(0,Number(state.discount)||0));
   const discount=subtotal*pct/100;
+  const total=subtotal-discount;
+
   subtotalGeneral.textContent=money(subtotal);
   discountAmount.textContent="-"+money(discount);
-  grandTotal.textContent=money(subtotal-discount);
+  grandTotal.textContent=money(total);
   itemCount.textContent=`${state.lines.length} ${state.lines.length===1?"cortina":"cortinas"}`;
-  const iva=state.priceMode==="conIVA";
-  priceModeText.textContent=iva?"Precios con IVA":"Precios sin IVA";
-  withVatBtn.classList.toggle("active",iva);
-  withoutVatBtn.classList.toggle("active",!iva);
+  discountPercent.value=state.discount;
 }
 
 function clearEntry(resetSelectors=false){
@@ -204,14 +199,16 @@ function copyLast(){
 
 function newBudget(){
   if(!state.lines.length||confirm("¿Empezar un presupuesto nuevo?")){
-    state.lines=[];state.discount=0;discountPercent.value=0;save();render();clearEntry(true);addBtn.textContent="Agregar cortina";
+    state.lines=[];
+    state.discount=0;
+    discountPercent.value=0;
+    save();
+    render();
+    clearEntry(true);
+    addBtn.textContent="Agregar cortina";
   }
 }
 
-function changeMode(mode){
-  if(state.lines.length&&!confirm("Al cambiar el tipo de precio se vaciará el presupuesto. ¿Continuar?"))return;
-  state.priceMode=mode;state.lines=[];save();render();calculate();
-}
 
 function sendWhatsApp(){
   if(!state.lines.length)return alert("Agregá al menos una cortina.");
@@ -219,15 +216,22 @@ function sendWhatsApp(){
   const pct=Math.min(100,Math.max(0,Number(state.discount)||0));
   const discount=subtotal*pct/100;
   const total=subtotal-discount;
-  const discountLines=pct>0?[`Subtotal: ${money(subtotal)}`,`Descuento ${pct}%: -${money(discount)}`]:[];
-  const msg=["PRESUPUESTO DE CORTINAS","",...state.lines.flatMap((x,i)=>[
-    `Cortina ${i+1}`,
-    `${x.q} × ${x.w.toFixed(2).replace(".",",")} m × ${x.h.toFixed(2).replace(".",",")} m`,
-    `${x.grupo}: ${x.m}`,
-    `${x.subtipo}: ${x.t}`,
-    x.a?`Accesorio: ${x.aq} × ${x.a}`:"",
-    money(x.total),""
-  ]).filter(Boolean),...discountLines,`TOTAL: ${money(total)}`,state.priceMode==="conIVA"?"Precios con IVA":"Precios sin IVA"].join("\\n");
+  const extra=pct>0?[`Subtotal: ${money(subtotal)}`,`Descuento adicional ${pct}%: -${money(discount)}`]:[];
+
+  const msg=["PRESUPUESTO DE CORTINAS","",
+    ...state.lines.flatMap((x,i)=>[
+      `Cortina ${i+1}`,
+      `${x.q} × ${x.w.toFixed(2).replace(".",",")} m × ${x.h.toFixed(2).replace(".",",")} m`,
+      `${x.grupo}: ${x.m}`,
+      `${x.subtipo}: ${x.t}`,
+      x.a?`Accesorio: ${x.aq} × ${x.a}`:"",
+      money(x.total),""
+    ]).filter(Boolean),
+    ...extra,
+    `TOTAL: ${money(total)}`
+  ].join("
+");
+
   open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 }
 
@@ -243,13 +247,11 @@ mecanismo.addEventListener("blur",()=>hideResultsLater(mecanismosResults));
 tela.addEventListener("blur",()=>hideResultsLater(telasResults));
 accesorio.addEventListener("blur",()=>hideResultsLater(accesoriosResults));
 ["ancho","largo","cantidad","cantidadAccesorio"].forEach(id=>$(id).addEventListener("input",calculate));
-discountPercent.addEventListener("input",()=>{state.discount=Math.min(100,Math.max(0,Number(discountPercent.value)||0));save();render()});
+discountPercent.addEventListener("input",()=>{state.discount=Math.min(100,Math.max(0,Number(discountPercent.value)||0));save();render();});
 addBtn.onclick=addLine;
 copyLastBtn.onclick=copyLast;
 whatsappBtn.onclick=sendWhatsApp;
 newBudgetBtn.onclick=newBudget;
-withVatBtn.onclick=()=>changeMode("conIVA");
-withoutVatBtn.onclick=()=>changeMode("sinIVA");
 
 init();loadMechanisms();loadFabricTypes();loadFabrics();render();calculate();
 if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js").catch(()=>{});
