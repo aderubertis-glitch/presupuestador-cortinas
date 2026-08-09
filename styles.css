@@ -22,3 +22,5 @@ button{width:100%;min-height:54px;margin-top:11px;padding:12px 15px;border:0;bor
 .picker-search-wrap{padding-bottom:10px}.picker-search{width:100%;min-height:50px;padding:11px 13px;border:1.5px solid #aab9c3;border-radius:11px;font-size:18px}
 .picker-list{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;flex:1;min-height:120px}.picker-option{width:100%;margin:0;min-height:54px;padding:12px 10px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:#fff;color:var(--text);text-align:left;font-weight:500}.picker-option:active{background:var(--soft)}.picker-empty{padding:20px 10px;color:var(--muted);text-align:center}
 body.modal-open{overflow:hidden}@media(max-width:380px){body{font-size:17px}main{padding:10px}.card{padding:13px}}
+
+.optional{font-size:13px;font-weight:500;color:var(--muted)}

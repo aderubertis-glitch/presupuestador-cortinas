@@ -1,15 +1,10 @@
-# Presupuestador - Tipo y Subtipo
+# Presupuestador - mecanismo y/o tela
 
-Jerarquía de mecanismos:
-Grupo → Tipo → Subtipo → Artículo
+Ahora una cotización puede contener:
+- solo mecanismo/artículo;
+- solo tela;
+- mecanismo + tela;
+- accesorios opcionales.
 
-Ejemplo:
-Roller → Motor Somfy → Motor 40 mm → Somfy ALTUS...
-
-Los motores ahora se incluyen desde el Excel.
-Cálculo:
-- ML: ancho × precio
-- M2: ancho × largo × precio
-- Unidad/Kit/Set/etc.: precio por cantidad
-
-Mantiene 40% automático sobre precio sin IVA y descuento adicional 0% por defecto.
+La app exige al menos un mecanismo o una tela.
+La tela ya no es obligatoria.

@@ -155,20 +155,31 @@ function render(){
   budgetLines.innerHTML=state.lines.length?state.lines.map((x,i)=>{
     const pct=Number(x.discountPct||0);
     const discountAmount=(x.subtotal||0)*pct/100;
+
+    const mechanismText=x.m
+      ? `${esc(x.grupo)} → ${x.tipoM?esc(x.tipoM)+" → ":""}${x.subtipoM?esc(x.subtipoM)+"<br>":""}${esc(x.m)}`
+      : "";
+
+    const fabricText=x.t
+      ? `${esc(x.subtipoTela)} → ${esc(x.t)}`
+      : "";
+
     return `<article class="line">
       <div class="line-head"><span>Cortina ${i+1}</span><span>${money(x.total)}</span></div>
       <div class="line-detail">
-        ${x.q} × ${x.w.toFixed(2).replace(".",",")} m × ${x.h.toFixed(2).replace(".",",")} m<br>
-        ${esc(x.grupo)} → ${esc(x.tipoM)} → ${esc(x.subtipoM)}<br>
-        ${esc(x.m)}<br>
-        ${esc(x.subtipoTela)} → ${esc(x.t)}
+        ${x.q} × ${x.w.toFixed(2).replace(".",",")} m × ${x.h.toFixed(2).replace(".",",")} m
+        ${mechanismText?`<br>${mechanismText}`:""}
+        ${fabricText?`<br>${fabricText}`:""}
         ${x.a?`<br>Accesorio: ${x.aq} × ${esc(x.a)}`:""}
       </div>
       <div class="actions">
         <button class="edit" onclick="editLine(${x.id})">Editar</button>
         <button class="delete" onclick="removeLine(${x.id})">Eliminar</button>
       </div>
-      <div class="line-discount-row"><span>Descuento adicional (${pct}%)</span><b>-${money(discountAmount)}</b></div>
+      <div class="line-discount-row">
+        <span>Descuento adicional (${pct}%)</span>
+        <b>-${money(discountAmount)}</b>
+      </div>
     </article>`;
   }).join(""):'<p class="empty">Todavía no agregaste ninguna cortina.</p>';
 
@@ -192,52 +203,121 @@ function clearEntry(resetAll=false){
 
 function addLine(){
   const c=calculate();
+
   if(!grupoMecanismo.value)return alert("Elegí el grupo.");
-  if(!tipoMecanismo.value)return alert("Elegí el tipo.");
-  if(!subtipoMecanismo.value)return alert("Elegí el subtipo.");
-  if(!c.m)return alert("Elegí el mecanismo o artículo.");
-  if(!subtipoTela.value)return alert("Elegí el tipo de tela.");
-  if(!c.t)return alert("Elegí una tela.");
+  if(!c.m && !c.t)return alert("Elegí al menos un mecanismo o una tela.");
   if(c.w<=0||c.h<=0)return alert("Ingresá ancho y largo.");
 
   state.lines.push({
-    id:Date.now(),grupo:grupoMecanismo.value,tipoM:tipoMecanismo.value,subtipoM:subtipoMecanismo.value,m:c.m.descripcion,
-    subtipoTela:subtipoTela.value,t:c.t.descripcion,a:c.a?.descripcion||"",
-    w:c.w,h:c.h,q:c.q,aq:c.a?c.aq:0,subtotal:c.subtotal,discountPct:state.discount,total:c.total
+    id:Date.now(),
+    grupo:grupoMecanismo.value,
+    tipoM:c.m?tipoMecanismo.value:"",
+    subtipoM:c.m?subtipoMecanismo.value:"",
+    m:c.m?.descripcion||"",
+    subtipoTela:c.t?subtipoTela.value:"",
+    t:c.t?.descripcion||"",
+    a:c.a?.descripcion||"",
+    w:c.w,h:c.h,q:c.q,aq:c.a?c.aq:0,
+    subtotal:c.subtotal,discountPct:state.discount,total:c.total
   });
-  save();render();clearEntry(false);addBtn.textContent="Agregar cortina";
+
+  save();
+  render();
+  clearEntry(false);
+  addBtn.textContent="Agregar cortina";
 }
 
 function removeLine(id){state.lines=state.lines.filter(x=>x.id!==id);save();render()}
 
 function editLine(id){
-  const x=state.lines.find(v=>v.id===id);if(!x)return;
-  grupoMecanismo.value=x.grupo;loadMechanismTypes();
-  tipoMecanismo.value=x.tipoM;loadMechanismSubtypes();
-  subtipoMecanismo.value=x.subtipoM;enableMechanismPicker();
-  mecanismo.value=x.m;mecanismoPickerText.textContent=x.m;
+  const x=state.lines.find(v=>v.id===id);
+  if(!x)return;
 
-  loadFabricTypes();subtipoTela.value=x.subtipoTela;enableFabricPicker();
-  tela.value=x.t;telaPickerText.textContent=x.t;
+  grupoMecanismo.value=x.grupo;
+  loadMechanismTypes();
+  loadFabricTypes();
 
-  ancho.value=String(x.w).replace(".",",");largo.value=String(x.h).replace(".",",");cantidad.value=x.q;
-  accesorio.value=x.a||"";accesorioPickerText.textContent=x.a||"Sin accesorio";cantidadAccesorio.value=x.aq||1;
-  state.discount=Number(x.discountPct||0);discountPercent.value=state.discount;
+  if(x.m){
+    tipoMecanismo.value=x.tipoM||"";
+    loadMechanismSubtypes();
+    subtipoMecanismo.value=x.subtipoM||"";
+    enableMechanismPicker();
+    mecanismo.value=x.m;
+    mecanismoPickerText.textContent=x.m;
+  }else{
+    tipoMecanismo.value="";
+    subtipoMecanismo.value="";
+    mecanismo.value="";
+    mecanismoPickerText.textContent="Elegir mecanismo";
+  }
 
-  state.lines=state.lines.filter(v=>v.id!==id);save();render();calculate();
-  addBtn.textContent="Guardar cambios";window.scrollTo({top:0,behavior:"smooth"});
+  if(x.t){
+    subtipoTela.value=x.subtipoTela||"";
+    enableFabricPicker();
+    tela.value=x.t;
+    telaPickerText.textContent=x.t;
+  }else{
+    subtipoTela.value="";
+    tela.value="";
+    telaPickerText.textContent="Elegir tela";
+    telaPicker.disabled=true;
+  }
+
+  ancho.value=String(x.w).replace(".",",");
+  largo.value=String(x.h).replace(".",",");
+  cantidad.value=x.q;
+  accesorio.value=x.a||"";
+  accesorioPickerText.textContent=x.a||"Sin accesorio";
+  cantidadAccesorio.value=x.aq||1;
+
+  state.discount=Number(x.discountPct||0);
+  discountPercent.value=state.discount;
+
+  state.lines=state.lines.filter(v=>v.id!==id);
+  save();
+  render();
+  calculate();
+
+  addBtn.textContent="Guardar cambios";
+  window.scrollTo({top:0,behavior:"smooth"});
 }
 
 function copyLast(){
-  const x=state.lines.at(-1);if(!x)return alert("Todavía no hay una cortina para copiar.");
-  grupoMecanismo.value=x.grupo;loadMechanismTypes();
-  tipoMecanismo.value=x.tipoM;loadMechanismSubtypes();
-  subtipoMecanismo.value=x.subtipoM;enableMechanismPicker();
-  mecanismo.value=x.m;mecanismoPickerText.textContent=x.m;
-  loadFabricTypes();subtipoTela.value=x.subtipoTela;enableFabricPicker();tela.value=x.t;telaPickerText.textContent=x.t;
-  ancho.value=String(x.w).replace(".",",");largo.value=String(x.h).replace(".",",");cantidad.value=x.q;
-  accesorio.value=x.a||"";accesorioPickerText.textContent=x.a||"Sin accesorio";cantidadAccesorio.value=x.aq||1;
-  state.discount=Number(x.discountPct||0);discountPercent.value=state.discount;calculate();window.scrollTo({top:0,behavior:"smooth"});
+  const x=state.lines.at(-1);
+  if(!x)return alert("Todavía no hay una cortina para copiar.");
+
+  grupoMecanismo.value=x.grupo;
+  loadMechanismTypes();
+  loadFabricTypes();
+
+  if(x.m){
+    tipoMecanismo.value=x.tipoM||"";
+    loadMechanismSubtypes();
+    subtipoMecanismo.value=x.subtipoM||"";
+    enableMechanismPicker();
+    mecanismo.value=x.m;
+    mecanismoPickerText.textContent=x.m;
+  }
+
+  if(x.t){
+    subtipoTela.value=x.subtipoTela||"";
+    enableFabricPicker();
+    tela.value=x.t;
+    telaPickerText.textContent=x.t;
+  }
+
+  ancho.value=String(x.w).replace(".",",");
+  largo.value=String(x.h).replace(".",",");
+  cantidad.value=x.q;
+  accesorio.value=x.a||"";
+  accesorioPickerText.textContent=x.a||"Sin accesorio";
+  cantidadAccesorio.value=x.aq||1;
+
+  state.discount=Number(x.discountPct||0);
+  discountPercent.value=state.discount;
+
+  calculate();
+  window.scrollTo({top:0,behavior:"smooth"});
 }
 
 function newBudget(){
@@ -248,13 +328,28 @@ function newBudget(){
 
 function sendWhatsApp(){
   if(!state.lines.length)return alert("Agregá al menos una cortina.");
+
   const total=state.lines.reduce((s,x)=>s+x.total,0);
-  const msg=["PRESUPUESTO DE CORTINAS","",...state.lines.flatMap((x,i)=>{
-    const pct=Number(x.discountPct||0),d=(x.subtotal||0)*pct/100;
-    return [`Cortina ${i+1}`,`${x.q} × ${x.w.toFixed(2).replace(".",",")} m × ${x.h.toFixed(2).replace(".",",")} m`,
-      `${x.grupo} / ${x.tipoM} / ${x.subtipoM}`,x.m,`${x.subtipoTela}: ${x.t}`,
-      x.a?`Accesorio: ${x.aq} × ${x.a}`:"",`Descuento adicional (${pct}%): -${money(d)}`,money(x.total),""];
-  }).filter(Boolean),`TOTAL: ${money(total)}`].join("\\n");
+
+  const msg=["PRESUPUESTO DE CORTINAS","",
+    ...state.lines.flatMap((x,i)=>{
+      const pct=Number(x.discountPct||0);
+      const d=(x.subtotal||0)*pct/100;
+
+      return [
+        `Cortina ${i+1}`,
+        `${x.q} × ${x.w.toFixed(2).replace(".",",")} m × ${x.h.toFixed(2).replace(".",",")} m`,
+        x.m?`${x.grupo} / ${x.tipoM} / ${x.subtipoM}`:"",
+        x.m?x.m:"",
+        x.t?`${x.subtipoTela}: ${x.t}`:"",
+        x.a?`Accesorio: ${x.aq} × ${x.a}`:"",
+        `Descuento adicional (${pct}%): -${money(d)}`,
+        money(x.total),""
+      ];
+    }).filter(Boolean),
+    `TOTAL: ${money(total)}`
+  ].join("\\n");
+
   open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 }
 
