@@ -1,9 +1,12 @@
-# Presupuestador - medidas según unidad
+# Presupuestador - tela independiente
 
-La aplicación ahora solicita medidas según la unidad del artículo seleccionado:
+La tela ahora tiene su propio circuito:
+Grupo de tela → Tipo de tela → Tela
 
-- Unidad / Kit / Set / Par / Rollo: no requiere ancho ni largo.
-- ML: requiere únicamente ancho.
-- M2: requiere ancho y largo.
+Ya no depende del Grupo del mecanismo.
 
-Esto permite presupuestar motores por Kit o Unidad sin ingresar medidas ficticias.
+Esto permite:
+- cotizar solo un motor;
+- cotizar solo una tela;
+- cotizar motor + tela aunque pertenezcan a grupos independientes;
+- mantener filtros correctos para mecanismos, telas y accesorios.

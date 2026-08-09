@@ -12,8 +12,9 @@ function mechanismGroups(){return unique(PRODUCTOS.mecanismos.map(x=>x.grupo))}
 function mechanismTypes(){return unique(PRODUCTOS.mecanismos.filter(x=>x.grupo===grupoMecanismo.value).map(x=>x.tipo))}
 function mechanismSubtypes(){return unique(PRODUCTOS.mecanismos.filter(x=>x.grupo===grupoMecanismo.value&&x.tipo===tipoMecanismo.value).map(x=>x.subtipo))}
 function mechanismItems(){return PRODUCTOS.mecanismos.filter(x=>x.grupo===grupoMecanismo.value&&x.tipo===tipoMecanismo.value&&x.subtipo===subtipoMecanismo.value)}
-function fabricTypes(){return unique(PRODUCTOS.telas.filter(x=>x.grupo===grupoMecanismo.value).map(x=>x.subtipo))}
-function fabricItems(){return PRODUCTOS.telas.filter(x=>x.grupo===grupoMecanismo.value&&x.subtipo===subtipoTela.value)}
+function fabricGroups(){return unique(PRODUCTOS.telas.map(x=>x.grupo))}
+function fabricTypes(){return unique(PRODUCTOS.telas.filter(x=>x.grupo===grupoTela.value).map(x=>x.subtipo))}
+function fabricItems(){return PRODUCTOS.telas.filter(x=>x.grupo===grupoTela.value&&x.subtipo===subtipoTela.value)}
 function accessoryTypes(){return unique(PRODUCTOS.accesorios.filter(x=>x.grupo===grupoMecanismo.value).map(x=>x.tipo))}
 function accessorySubtypes(){return unique(PRODUCTOS.accesorios.filter(x=>x.grupo===grupoMecanismo.value&&x.tipo===tipoAccesorio.value).map(x=>x.subtipo))}
 function accessoryItems(){return PRODUCTOS.accesorios.filter(x=>x.grupo===grupoMecanismo.value&&x.tipo===tipoAccesorio.value&&x.subtipo===subtipoAccesorio.value)}
@@ -53,6 +54,7 @@ function enableAccessoryPicker(){
 
 function init(){
   grupoMecanismo.innerHTML=option("","Elegir grupo")+mechanismGroups().map(x=>option(x)).join("");
+  grupoTela.innerHTML=option("","Elegir grupo de tela")+fabricGroups().map(x=>option(x)).join("");
   discountPercent.value=state.discount;
   resetMechanismHierarchy();
   loadFabricTypes();
@@ -107,10 +109,12 @@ function loadFabricTypes(){
   subtipoTela.value="";
   tela.value="";
   telaPickerText.textContent="Elegir tela";
-  const group=grupoMecanismo.value;
+  const group=grupoTela.value;
   const types=fabricTypes();
   subtipoTela.disabled=!group||types.length===0;
-  subtipoTela.innerHTML=types.length?option("","Elegir tipo de tela")+types.map(x=>option(x)).join(""):option("",group?"Sin telas para este grupo":"Primero elegí un grupo");
+  subtipoTela.innerHTML=types.length
+    ? option("","Elegir tipo de tela")+types.map(x=>option(x)).join("")
+    : option("",group?"Sin telas para este grupo":"Primero elegí un grupo de tela");
   telaPicker.disabled=true;
 }
 
@@ -206,7 +210,7 @@ function render(){
       : "";
 
     const fabricText=x.t
-      ? `${esc(x.subtipoTela)} → ${esc(x.t)}`
+      ? `${x.grupoTela?esc(x.grupoTela)+" → ":""}${esc(x.subtipoTela)} → ${esc(x.t)}`
       : "";
 
     return `<article class="line">
@@ -236,6 +240,7 @@ function clearEntry(resetAll=false){
   if(resetAll){
     grupoMecanismo.value="";
     resetMechanismHierarchy();
+    grupoTela.value="";
     loadFabricTypes();
   }else{
     mecanismo.value="";mecanismoPickerText.textContent="Elegir mecanismo";
@@ -249,8 +254,9 @@ function clearEntry(resetAll=false){
 function addLine(){
   const c=calculate();
 
-  if(!grupoMecanismo.value)return alert("Elegí el grupo.");
   if(!c.m && !c.t)return alert("Elegí al menos un mecanismo o una tela.");
+  if(c.m && !grupoMecanismo.value)return alert("Elegí el grupo del mecanismo.");
+  if(c.t && !grupoTela.value)return alert("Elegí el grupo de tela.");
 
   const dims=requiredDimensions([c.m,c.t,c.a]);
   if(dims.width && c.w<=0 && dims.height)return alert("Ingresá ancho y largo.");
@@ -259,10 +265,11 @@ function addLine(){
 
   state.lines.push({
     id:Date.now(),
-    grupo:grupoMecanismo.value,
+    grupo:c.m?grupoMecanismo.value:"",
     tipoM:c.m?tipoMecanismo.value:"",
     subtipoM:c.m?subtipoMecanismo.value:"",
     m:c.m?.descripcion||"",
+    grupoTela:c.t?grupoTela.value:"",
     subtipoTela:c.t?subtipoTela.value:"",
     t:c.t?.descripcion||"",
     tipoA:c.a?tipoAccesorio.value:"",
@@ -286,6 +293,7 @@ function editLine(id){
 
   grupoMecanismo.value=x.grupo;
   loadMechanismTypes();
+  grupoTela.value=x.grupoTela||"";
   loadFabricTypes();
 
   if(x.m){
@@ -346,6 +354,7 @@ function copyLast(){
 
   grupoMecanismo.value=x.grupo;
   loadMechanismTypes();
+  grupoTela.value=x.grupoTela||"";
   loadFabricTypes();
 
   if(x.m){
@@ -406,7 +415,7 @@ function sendWhatsApp(){
         `${(x.w>0||x.h>0)?`${x.q} × ${x.w>0?x.w.toFixed(2).replace(".",",")+" m":""}${x.w>0&&x.h>0?" × ":""}${x.h>0?x.h.toFixed(2).replace(".",",")+" m":""}`:`Cantidad: ${x.q}`}`,
         x.m?`${x.grupo} / ${x.tipoM} / ${x.subtipoM}`:"",
         x.m?x.m:"",
-        x.t?`${x.subtipoTela}: ${x.t}`:"",
+        x.t?`${x.grupoTela?x.grupoTela+" / ":""}${x.subtipoTela}: ${x.t}`:"",
         x.a?`Accesorio: ${x.tipoA?x.tipoA+" / ":""}${x.subtipoA?x.subtipoA+" / ":""}${x.aq} × ${x.a}`:"",
         `Descuento adicional (${pct}%): -${money(d)}`,
         money(x.total),""
@@ -418,9 +427,10 @@ function sendWhatsApp(){
   open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 }
 
-grupoMecanismo.addEventListener("change",()=>{loadMechanismTypes();loadFabricTypes();loadAccessoryTypes();calculate();});
+grupoMecanismo.addEventListener("change",()=>{loadMechanismTypes();loadAccessoryTypes();calculate();});
 tipoMecanismo.addEventListener("change",()=>{loadMechanismSubtypes();calculate();});
 subtipoMecanismo.addEventListener("change",enableMechanismPicker);
+grupoTela.addEventListener("change",()=>{loadFabricTypes();calculate();});
 subtipoTela.addEventListener("change",enableFabricPicker);
 ["ancho","largo","cantidad","cantidadAccesorio"].forEach(id=>$(id).addEventListener("input",calculate));
 discountPercent.addEventListener("input",()=>{state.discount=Math.min(100,Math.max(0,Number(discountPercent.value)||0));save();calculate();});
