@@ -15,7 +15,7 @@
 <header>
   <div>
     <h1>Presupuestador</h1>
-    <p>Precio sin IVA con 40% de descuento</p>
+    <p>Precios sin IVA</p>
   </div>
   <button id="newBudgetBtn" type="button">Nuevo presupuesto</button>
 </header>
@@ -87,15 +87,25 @@
     </details>
 
     <div class="calc">
-      <div><span>Mecanismo</span><b id="mecanismoTotal">$ 0</b></div>
-      <div><span>Tela</span><b id="telaTotal">$ 0</b></div>
-      <div><span>Accesorio</span><b id="accesorioTotal">$ 0</b></div>
+      <div class="item-price-block">
+        <div class="item-price-main"><span>Mecanismo</span><b id="mecanismoTotal">$ 0</b></div>
+        <div id="mecanismoAutoDiscount" class="auto-discount-detail"></div>
+      </div>
+      <div class="item-price-block">
+        <div class="item-price-main"><span>Tela</span><b id="telaTotal">$ 0</b></div>
+        <div id="telaAutoDiscount" class="auto-discount-detail"></div>
+      </div>
+      <div class="item-price-block">
+        <div class="item-price-main"><span>Accesorio</span><b id="accesorioTotal">$ 0</b></div>
+        <div id="accesorioAutoDiscount" class="auto-discount-detail"></div>
+      </div>
       <div class="calc-subtotal"><span>Subtotal cortina</span><b id="lineSubtotal">$ 0</b></div>
+      <div id="autoDiscountSummary" class="auto-discount-summary"></div>
 
       <div class="inline-discount">
         <label for="discountPercent">Descuento adicional (%)</label>
         <input id="discountPercent" type="number" min="0" max="100" step="0.1" value="0">
-        <small class="hint">Los precios ya incluyen un 40% de descuento.</small>
+        <small class="hint">El 40% automático se aplica únicamente a los artículos que admiten descuento.</small>
       </div>
 
       <div class="discount-preview"><span id="lineDiscountLabel">Descuento adicional (0%)</span><b id="lineDiscount">-$ 0</b></div>

@@ -8,12 +8,12 @@ const hasNoDiscount=i=>{
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g,"")
     .toLowerCase();
-  return text.includes("no aplican descuentos");
+  return text.includes("no aplican descuentos") || text.includes("no aplica descuento");
 };
-const price=i=>{
-  const base=i?.precioSinIVA||0;
-  return hasNoDiscount(i)?base:base*0.60;
-};
+
+const basePrice=i=>i?.precioSinIVA||0;
+const automaticDiscountRate=i=>i && !hasNoDiscount(i) ? 0.40 : 0;
+const price=i=>basePrice(i)*(1-automaticDiscountRate(i));
 const unique=a=>[...new Set(a.filter(v=>v!==undefined&&v!==null&&String(v)!=="").map(String))].sort((a,b)=>a.localeCompare(b,"es",{numeric:true}));
 const option=(value,text=value)=>`<option value="${esc(value)}">${esc(text)}</option>`;
 const exact=(list,value)=>list.find(x=>x.descripcion===value)||null;
@@ -175,6 +175,37 @@ function itemCost(item,w,h,q,extraQty=1){
   return p*q*extraQty;
 }
 
+function itemBaseCost(item,w,h,q,extraQty=1){
+  if(!item)return 0;
+  const p=basePrice(item);
+  const unit=(item.unidad||"").toLowerCase();
+  if(unit==="ml") return w*p*q*extraQty;
+  if(unit==="m2") return w*h*p*q*extraQty;
+  return p*q*extraQty;
+}
+
+function autoDiscountInfo(item,baseCost){
+  if(!item)return {amount:0,applies:false};
+  const applies=!hasNoDiscount(item);
+  return {amount:applies?baseCost*0.40:0,applies};
+}
+
+function renderAutoDiscountDetail(element,item,info){
+  if(!element)return;
+  element.classList.remove("applied","no-discount");
+  if(!item){
+    element.textContent="";
+    return;
+  }
+  if(info.applies){
+    element.textContent=`40% automático: -${money(info.amount)}`;
+    element.classList.add("applied");
+  }else{
+    element.textContent="Sin 40% automático · artículo excluido de descuentos";
+    element.classList.add("no-discount");
+  }
+}
+
 function requiredDimensions(items){
   const units=items.filter(Boolean).map(item=>String(item.unidad||"").toLowerCase());
   return {
@@ -189,20 +220,53 @@ function calculate(){
   const a=exact(accessoryItems(),accesorio.value);
   const w=num(ancho.value),h=num(largo.value),q=Math.max(1,+cantidad.value||1),aq=Math.max(1,+cantidadAccesorio.value||1);
 
-  const mt=itemCost(m,w,h,q,1);
-  const tt=itemCost(t,w,h,q,1);
-  const at=itemCost(a,w,h,q,aq);
+  const mb=itemBaseCost(m,w,h,q,1);
+  const tb=itemBaseCost(t,w,h,q,1);
+  const ab=itemBaseCost(a,w,h,q,aq);
+
+  const mdi=autoDiscountInfo(m,mb);
+  const tdi=autoDiscountInfo(t,tb);
+  const adi=autoDiscountInfo(a,ab);
+
+  const mt=mb-mdi.amount;
+  const tt=tb-tdi.amount;
+  const at=ab-adi.amount;
+
+  const automaticDiscount=mdi.amount+tdi.amount+adi.amount;
   const subtotal=mt+tt+at;
+
   const pct=Math.min(100,Math.max(0,Number(state.discount)||0));
   const discount=subtotal*pct/100;
   const total=subtotal-discount;
 
-  mecanismoTotal.textContent=money(mt);telaTotal.textContent=money(tt);accesorioTotal.textContent=money(at);
+  mecanismoTotal.textContent=money(mt);
+  telaTotal.textContent=money(tt);
+  accesorioTotal.textContent=money(at);
+
+  renderAutoDiscountDetail(mecanismoAutoDiscount,m,mdi);
+  renderAutoDiscountDetail(telaAutoDiscount,t,tdi);
+  renderAutoDiscountDetail(accesorioAutoDiscount,a,adi);
+
   lineSubtotal.textContent=money(subtotal);
+
+  if(autoDiscountSummary){
+    autoDiscountSummary.textContent=automaticDiscount>0
+      ? `Descuento automático total aplicado: -${money(automaticDiscount)}`
+      : "";
+  }
+
   lineDiscountLabel.textContent=`Descuento adicional (${pct}%)`;
   lineDiscount.textContent="-"+money(discount);
   lineTotal.textContent=money(total);
-  return{m,t,a,w,h,q,aq,mt,tt,at,subtotal,discount,total};
+
+  return{
+    m,t,a,w,h,q,aq,
+    mecanismoBase:mb,telaBase:tb,accesorioBase:ab,
+    mecanismoAutoDiscount:mdi.amount,
+    telaAutoDiscount:tdi.amount,
+    accesorioAutoDiscount:adi.amount,
+    mt,tt,at,automaticDiscount,subtotal,discount,total
+  };
 }
 
 function save(){
@@ -215,12 +279,23 @@ function render(){
     const pct=Number(x.discountPct||0);
     const discountAmount=(x.subtotal||0)*pct/100;
 
+    const mAuto=Number(x.mecanismoAutoDiscount||0);
+    const tAuto=Number(x.telaAutoDiscount||0);
+    const aAuto=Number(x.accesorioAutoDiscount||0);
+
     const mechanismText=x.m
-      ? `${esc(x.grupo)} → ${x.tipoM?esc(x.tipoM)+" → ":""}${x.subtipoM?esc(x.subtipoM)+"<br>":""}${esc(x.m)}`
+      ? `${esc(x.grupo)} → ${x.tipoM?esc(x.tipoM)+" → ":""}${x.subtipoM?esc(x.subtipoM)+"<br>":""}${esc(x.m)}
+         <br><span class="line-auto-detail">${mAuto>0?`40% automático: -${money(mAuto)}`:"Sin 40% automático"}</span>`
       : "";
 
     const fabricText=x.t
-      ? `${x.grupoTela?esc(x.grupoTela)+" → ":""}${esc(x.subtipoTela)} → ${esc(x.t)}`
+      ? `${x.grupoTela?esc(x.grupoTela)+" → ":""}${esc(x.subtipoTela)} → ${esc(x.t)}
+         <br><span class="line-auto-detail">${tAuto>0?`40% automático: -${money(tAuto)}`:"Sin 40% automático"}</span>`
+      : "";
+
+    const accessoryText=x.a
+      ? `Accesorio: ${x.tipoA?esc(x.tipoA)+" → ":""}${x.subtipoA?esc(x.subtipoA)+" → ":""}${x.aq} × ${esc(x.a)}
+         <br><span class="line-auto-detail">${aAuto>0?`40% automático: -${money(aAuto)}`:"Sin 40% automático"}</span>`
       : "";
 
     return `<article class="line">
@@ -229,12 +304,13 @@ function render(){
         ${(x.w>0||x.h>0)?`${x.q} × ${x.w>0?x.w.toFixed(2).replace(".",",")+" m":""}${x.w>0&&x.h>0?" × ":""}${x.h>0?x.h.toFixed(2).replace(".",",")+" m":""}`:`Cantidad: ${x.q}`}
         ${mechanismText?`<br>${mechanismText}`:""}
         ${fabricText?`<br>${fabricText}`:""}
-        ${x.a?`<br>Accesorio: ${x.tipoA?esc(x.tipoA)+" → ":""}${x.subtipoA?esc(x.subtipoA)+" → ":""}${x.aq} × ${esc(x.a)}`:""}
+        ${accessoryText?`<br>${accessoryText}`:""}
       </div>
       <div class="actions">
         <button class="edit" onclick="editLine(${x.id})">Editar</button>
         <button class="delete" onclick="removeLine(${x.id})">Eliminar</button>
       </div>
+      ${Number(x.automaticDiscount||0)>0?`<div class="line-auto-summary"><span>Descuento automático total</span><b>-${money(x.automaticDiscount)}</b></div>`:""}
       <div class="line-discount-row">
         <span>Descuento adicional (${pct}%)</span>
         <b>-${money(discountAmount)}</b>
@@ -289,6 +365,13 @@ function addLine(){
     mecanismoImporte:c.mt,
     telaImporte:c.tt,
     accesorioImporte:c.at,
+    mecanismoBase:c.mecanismoBase,
+    telaBase:c.telaBase,
+    accesorioBase:c.accesorioBase,
+    mecanismoAutoDiscount:c.mecanismoAutoDiscount,
+    telaAutoDiscount:c.telaAutoDiscount,
+    accesorioAutoDiscount:c.accesorioAutoDiscount,
+    automaticDiscount:c.automaticDiscount,
     subtotal:c.subtotal,discountPct:state.discount,total:c.total
   });
 
@@ -420,43 +503,39 @@ function sendWhatsApp(){
 
   const blocks=state.lines.map((x,i)=>{
     const pct=Number(x.discountPct||0);
-    const descuento=(x.subtotal||0)*pct/100;
+    const descuentoAdicional=(x.subtotal||0)*pct/100;
 
     const dimensions=(x.w>0||x.h>0)
       ? `${x.q} × ${x.w>0?x.w.toFixed(2).replace(".",",")+" m":""}${x.w>0&&x.h>0?" × ":""}${x.h>0?x.h.toFixed(2).replace(".",",")+" m":""}`
       : `Cantidad: ${x.q}`;
-
-    // Compatibilidad con presupuestos guardados antes de esta versión:
-    let importeMecanismo=Number(x.mecanismoImporte||0);
-    let importeTela=Number(x.telaImporte||0);
-    let importeAccesorio=Number(x.accesorioImporte||0);
-
-    if(x.m && !importeMecanismo){
-      const item=PRODUCTOS.mecanismos.find(p=>p.descripcion===x.m);
-      if(item) importeMecanismo=itemCost(item,x.w,x.h,x.q,1);
-    }
-    if(x.t && !importeTela){
-      const item=PRODUCTOS.telas.find(p=>p.descripcion===x.t);
-      if(item) importeTela=itemCost(item,x.w,x.h,x.q,1);
-    }
-    if(x.a && !importeAccesorio){
-      const item=PRODUCTOS.accesorios.find(p=>p.descripcion===x.a);
-      if(item) importeAccesorio=itemCost(item,x.w,x.h,x.q,x.aq||1);
-    }
 
     const lines=[
       `*CORTINA ${i+1}*`,
       `📐 ${dimensions}`,
       "",
       x.m?`⚙️ *Mecanismo:* ${x.m}`:"",
-      x.m?`   *Precio mecanismo:* ${money(importeMecanismo)}`:"",
-      x.t?`🪟 *Tela:* ${x.t}`:"",
-      x.t?`   *Precio tela:* ${money(importeTela)}`:"",
-      x.a?`➕ *Accesorio:* ${x.aq} × ${x.a}`:"",
-      x.a?`   *Precio accesorio:* ${money(importeAccesorio)}`:"",
-      pct>0?"":"",
-      pct>0?`*Descuento adicional (${pct}%):* -${money(descuento)}`:"",
+      x.m?`   Precio sin IVA: ${money(x.mecanismoBase||x.mecanismoImporte||0)}`:"",
+      x.m?(Number(x.mecanismoAutoDiscount||0)>0
+        ?`   40% automático: -${money(x.mecanismoAutoDiscount)}`
+        :"   40% automático: no aplica"):"",
+      x.m?`   *Precio mecanismo: ${money(x.mecanismoImporte||0)}*`:"",
       "",
+      x.t?`🪟 *Tela:* ${x.t}`:"",
+      x.t?`   Precio sin IVA: ${money(x.telaBase||x.telaImporte||0)}`:"",
+      x.t?(Number(x.telaAutoDiscount||0)>0
+        ?`   40% automático: -${money(x.telaAutoDiscount)}`
+        :"   40% automático: no aplica"):"",
+      x.t?`   *Precio tela: ${money(x.telaImporte||0)}*`:"",
+      "",
+      x.a?`➕ *Accesorio:* ${x.aq} × ${x.a}`:"",
+      x.a?`   Precio sin IVA: ${money(x.accesorioBase||x.accesorioImporte||0)}`:"",
+      x.a?(Number(x.accesorioAutoDiscount||0)>0
+        ?`   40% automático: -${money(x.accesorioAutoDiscount)}`
+        :"   40% automático: no aplica"):"",
+      x.a?`   *Precio accesorio: ${money(x.accesorioImporte||0)}*`:"",
+      "",
+      Number(x.automaticDiscount||0)>0?`*Descuento automático total:* -${money(x.automaticDiscount)}`:"",
+      pct>0?`*Descuento adicional (${pct}%):* -${money(descuentoAdicional)}`:"",
       `*TOTAL CORTINA ${i+1}: ${money(x.total)}*`
     ].filter(line=>line!==null&&line!==undefined&&line!=="");
 
@@ -466,11 +545,7 @@ function sendWhatsApp(){
   const msg=[
     "🟢 *PRESUPUESTO*",
     "",
-    ...blocks.flatMap((block,i)=>
-      i<blocks.length-1
-        ? [block,"","──────────────",""]
-        : [block]
-    ),
+    ...blocks.flatMap((block,i)=>i<blocks.length-1?[block,"","──────────────",""]:[block]),
     "",
     "━━━━━━━━━━━━━━",
     `*TOTAL PRESUPUESTO: ${money(totalPresupuesto)}*`
@@ -478,7 +553,6 @@ function sendWhatsApp(){
 
   open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 }
-
 grupoMecanismo.addEventListener("change",()=>{loadMechanismTypes();loadAccessoryTypes();calculate();});
 tipoMecanismo.addEventListener("change",()=>{loadMechanismSubtypes();calculate();});
 subtipoMecanismo.addEventListener("change",enableMechanismPicker);
