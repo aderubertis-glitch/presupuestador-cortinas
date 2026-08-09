@@ -1,9 +1,6 @@
-# Presupuestador - WhatsApp detallado
+# Presupuestador - excepciones de descuento
 
-El mensaje de WhatsApp ahora:
-- se titula "PRESUPUESTO";
-- muestra por separado mecanismo, tela y accesorio;
-- muestra el precio individual de cada ítem;
-- muestra el descuento adicional solo si es mayor a 0%;
-- muestra TOTAL CORTINA 1, TOTAL CORTINA 2, etc.;
-- al final muestra TOTAL PRESUPUESTO.
+Regla de precios:
+- Normalmente se toma Precio sin IVA y se aplica 40% de descuento automático.
+- Si la descripción contiene "NO APLICAN DESCUENTOS", se toma el 100% del Precio sin IVA.
+- El descuento adicional manual continúa funcionando de forma independiente.

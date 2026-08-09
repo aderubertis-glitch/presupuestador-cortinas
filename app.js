@@ -3,7 +3,17 @@ const state={lines:JSON.parse(localStorage.getItem("presupuesto_lines")||"[]"),d
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const money=n=>new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS",maximumFractionDigits:0}).format(n||0);
 const num=v=>Number(String(v||"").trim().replace(/\./g,"").replace(",","."))||0;
-const price=i=>(i?.precioSinIVA||0)*0.60;
+const hasNoDiscount=i=>{
+  const text=String(i?.descripcion||"")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g,"")
+    .toLowerCase();
+  return text.includes("no aplican descuentos");
+};
+const price=i=>{
+  const base=i?.precioSinIVA||0;
+  return hasNoDiscount(i)?base:base*0.60;
+};
 const unique=a=>[...new Set(a.filter(v=>v!==undefined&&v!==null&&String(v)!=="").map(String))].sort((a,b)=>a.localeCompare(b,"es",{numeric:true}));
 const option=(value,text=value)=>`<option value="${esc(value)}">${esc(text)}</option>`;
 const exact=(list,value)=>list.find(x=>x.descripcion===value)||null;
