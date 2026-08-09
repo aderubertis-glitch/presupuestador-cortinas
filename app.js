@@ -161,6 +161,14 @@ function itemCost(item,w,h,q,extraQty=1){
   return p*q*extraQty;
 }
 
+function requiredDimensions(items){
+  const units=items.filter(Boolean).map(item=>String(item.unidad||"").toLowerCase());
+  return {
+    width: units.some(unit=>unit==="ml"||unit==="m2"),
+    height: units.some(unit=>unit==="m2")
+  };
+}
+
 function calculate(){
   const m=exact(mechanismItems(),mecanismo.value);
   const t=exact(fabricItems(),tela.value);
@@ -204,7 +212,7 @@ function render(){
     return `<article class="line">
       <div class="line-head"><span>Cortina ${i+1}</span><span>${money(x.total)}</span></div>
       <div class="line-detail">
-        ${x.q} × ${x.w.toFixed(2).replace(".",",")} m × ${x.h.toFixed(2).replace(".",",")} m
+        ${(x.w>0||x.h>0)?`${x.q} × ${x.w>0?x.w.toFixed(2).replace(".",",")+" m":""}${x.w>0&&x.h>0?" × ":""}${x.h>0?x.h.toFixed(2).replace(".",",")+" m":""}`:`Cantidad: ${x.q}`}
         ${mechanismText?`<br>${mechanismText}`:""}
         ${fabricText?`<br>${fabricText}`:""}
         ${x.a?`<br>Accesorio: ${x.tipoA?esc(x.tipoA)+" → ":""}${x.subtipoA?esc(x.subtipoA)+" → ":""}${x.aq} × ${esc(x.a)}`:""}
@@ -243,7 +251,11 @@ function addLine(){
 
   if(!grupoMecanismo.value)return alert("Elegí el grupo.");
   if(!c.m && !c.t)return alert("Elegí al menos un mecanismo o una tela.");
-  if(c.w<=0||c.h<=0)return alert("Ingresá ancho y largo.");
+
+  const dims=requiredDimensions([c.m,c.t,c.a]);
+  if(dims.width && c.w<=0 && dims.height)return alert("Ingresá ancho y largo.");
+  if(dims.width && c.w<=0)return alert("Ingresá el ancho.");
+  if(dims.height && c.h<=0)return alert("Ingresá el largo.");
 
   state.lines.push({
     id:Date.now(),
@@ -391,7 +403,7 @@ function sendWhatsApp(){
 
       return [
         `Cortina ${i+1}`,
-        `${x.q} × ${x.w.toFixed(2).replace(".",",")} m × ${x.h.toFixed(2).replace(".",",")} m`,
+        `${(x.w>0||x.h>0)?`${x.q} × ${x.w>0?x.w.toFixed(2).replace(".",",")+" m":""}${x.w>0&&x.h>0?" × ":""}${x.h>0?x.h.toFixed(2).replace(".",",")+" m":""}`:`Cantidad: ${x.q}`}`,
         x.m?`${x.grupo} / ${x.tipoM} / ${x.subtipoM}`:"",
         x.m?x.m:"",
         x.t?`${x.subtipoTela}: ${x.t}`:"",

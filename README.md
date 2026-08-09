@@ -1,7 +1,9 @@
-# Presupuestador de cortinas
+# Presupuestador - medidas según unidad
 
-Actualización:
-- mecanismo y/o tela opcionales;
-- accesorios filtrados por Grupo → Tipo → Subtipo → Artículo;
-- el grupo del accesorio se toma del grupo principal de la cortina;
-- descuento adicional y descuento base existentes se mantienen.
+La aplicación ahora solicita medidas según la unidad del artículo seleccionado:
+
+- Unidad / Kit / Set / Par / Rollo: no requiere ancho ni largo.
+- ML: requiere únicamente ancho.
+- M2: requiere ancho y largo.
+
+Esto permite presupuestar motores por Kit o Unidad sin ingresar medidas ficticias.
