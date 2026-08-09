@@ -24,39 +24,33 @@
   <section class="card">
     <h2>Nueva cortina</h2>
 
-    <label for="grupoMecanismo">Grupo del mecanismo</label>
-    <select id="grupoMecanismo">
-      <option value="">Elegir grupo</option>
-    </select>
+    <label for="grupoMecanismo">Grupo</label>
+    <select id="grupoMecanismo"><option value="">Elegir grupo</option></select>
 
-    <label for="mecanismo">Mecanismo</label>
+    <label for="tipoMecanismo">Tipo</label>
+    <select id="tipoMecanismo" disabled><option value="">Primero elegí un grupo</option></select>
+
+    <label for="subtipoMecanismo">Subtipo</label>
+    <select id="subtipoMecanismo" disabled><option value="">Primero elegí un tipo</option></select>
+
+    <label>Mecanismo / artículo</label>
     <button id="mecanismoPicker" class="picker-field" type="button" disabled>
-      <span id="mecanismoPickerText">Elegir mecanismo</span>
-      <span class="picker-arrow">⌄</span>
+      <span id="mecanismoPickerText">Elegir mecanismo</span><span class="picker-arrow">⌄</span>
     </button>
     <input id="mecanismo" type="hidden">
 
     <label for="subtipoTela">Tipo de tela del grupo elegido</label>
-    <select id="subtipoTela">
-      <option value="">Elegir tipo de tela</option>
-    </select>
+    <select id="subtipoTela" disabled><option value="">Primero elegí un grupo</option></select>
 
-    <label for="tela">Tela</label>
+    <label>Tela</label>
     <button id="telaPicker" class="picker-field" type="button" disabled>
-      <span id="telaPickerText">Elegir tela</span>
-      <span class="picker-arrow">⌄</span>
+      <span id="telaPickerText">Elegir tela</span><span class="picker-arrow">⌄</span>
     </button>
     <input id="tela" type="hidden">
 
     <div class="grid">
-      <div>
-        <label for="ancho">Ancho (m)</label>
-        <input id="ancho" inputmode="decimal" placeholder="2,40">
-      </div>
-      <div>
-        <label for="largo">Largo (m)</label>
-        <input id="largo" inputmode="decimal" placeholder="2,10">
-      </div>
+      <div><label for="ancho">Ancho (m)</label><input id="ancho" inputmode="decimal" placeholder="2,40"></div>
+      <div><label for="largo">Largo (m)</label><input id="largo" inputmode="decimal" placeholder="2,10"></div>
     </div>
 
     <label for="cantidad">Cantidad</label>
@@ -64,14 +58,11 @@
 
     <details>
       <summary>Agregar accesorio (opcional)</summary>
-      <label for="accesorio">Accesorio</label>
+      <label>Accesorio</label>
       <button id="accesorioPicker" class="picker-field" type="button">
-        <span id="accesorioPickerText">Sin accesorio</span>
-        <span class="picker-arrow">⌄</span>
+        <span id="accesorioPickerText">Sin accesorio</span><span class="picker-arrow">⌄</span>
       </button>
       <input id="accesorio" type="hidden">
-      </div>
-
       <label for="cantidadAccesorio">Cantidad de accesorio</label>
       <input id="cantidadAccesorio" type="number" min="1" value="1">
     </details>
@@ -88,7 +79,7 @@
         <small class="hint">Los precios ya incluyen un 40% de descuento.</small>
       </div>
 
-      <div class="discount-preview"><span>Descuento adicional</span><b id="lineDiscount">-$ 0</b></div>
+      <div class="discount-preview"><span id="lineDiscountLabel">Descuento adicional (0%)</span><b id="lineDiscount">-$ 0</b></div>
       <div class="total"><span>Total cortina</span><b id="lineTotal">$ 0</b></div>
     </div>
 
@@ -97,27 +88,12 @@
   </section>
 
   <section class="card">
-    <div class="title">
-      <h2>Presupuesto</h2>
-      <span id="itemCount">0 cortinas</span>
-    </div>
-
-    <div id="budgetLines">
-      <p class="empty">Todavía no agregaste ninguna cortina.</p>
-    </div>
-</div>
-<div><span>Descuento adicional</span><b id="discountAmount">-$ 0</b></div>
-    </div>
-
-    <div class="grand">
-      <span>Total presupuesto</span>
-      <b id="grandTotal">$ 0</b>
-    </div>
-
+    <div class="title"><h2>Presupuesto</h2><span id="itemCount">0 cortinas</span></div>
+    <div id="budgetLines"><p class="empty">Todavía no agregaste ninguna cortina.</p></div>
+    <div class="grand"><span>Total presupuesto</span><b id="grandTotal">$ 0</b></div>
     <button id="whatsappBtn" class="whatsapp" type="button">Enviar por WhatsApp</button>
   </section>
 </main>
-
 
 <div id="pickerModal" class="picker-modal" hidden>
   <div class="picker-backdrop"></div>
