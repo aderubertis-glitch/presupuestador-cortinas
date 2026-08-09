@@ -1,12 +1,8 @@
-# Presupuestador - tela independiente
+# Presupuestador - mensaje de WhatsApp mejorado
 
-La tela ahora tiene su propio circuito:
-Grupo de tela → Tipo de tela → Tela
-
-Ya no depende del Grupo del mecanismo.
-
-Esto permite:
-- cotizar solo un motor;
-- cotizar solo una tela;
-- cotizar motor + tela aunque pertenezcan a grupos independientes;
-- mantener filtros correctos para mecanismos, telas y accesorios.
+El mensaje enviado por WhatsApp ahora:
+- usa títulos y etiquetas claras;
+- separa mecanismo, tela y accesorios;
+- muestra subtotal y descuento solo cuando corresponde;
+- omite la línea de descuento si es 0%;
+- destaca el precio de cada cortina y el total general.

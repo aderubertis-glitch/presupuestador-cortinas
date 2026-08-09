@@ -405,24 +405,36 @@ function sendWhatsApp(){
 
   const total=state.lines.reduce((s,x)=>s+x.total,0);
 
-  const msg=["PRESUPUESTO DE CORTINAS","",
-    ...state.lines.flatMap((x,i)=>{
-      const pct=Number(x.discountPct||0);
-      const d=(x.subtotal||0)*pct/100;
+  const blocks=state.lines.map((x,i)=>{
+    const pct=Number(x.discountPct||0);
+    const d=(x.subtotal||0)*pct/100;
+    const dimensions=(x.w>0||x.h>0)
+      ? `${x.q} × ${x.w>0?x.w.toFixed(2).replace(".",",")+" m":""}${x.w>0&&x.h>0?" × ":""}${x.h>0?x.h.toFixed(2).replace(".",",")+" m":""}`
+      : `Cantidad: ${x.q}`;
 
-      return [
-        `Cortina ${i+1}`,
-        `${(x.w>0||x.h>0)?`${x.q} × ${x.w>0?x.w.toFixed(2).replace(".",",")+" m":""}${x.w>0&&x.h>0?" × ":""}${x.h>0?x.h.toFixed(2).replace(".",",")+" m":""}`:`Cantidad: ${x.q}`}`,
-        x.m?`${x.grupo} / ${x.tipoM} / ${x.subtipoM}`:"",
-        x.m?x.m:"",
-        x.t?`${x.grupoTela?x.grupoTela+" / ":""}${x.subtipoTela}: ${x.t}`:"",
-        x.a?`Accesorio: ${x.tipoA?x.tipoA+" / ":""}${x.subtipoA?x.subtipoA+" / ":""}${x.aq} × ${x.a}`:"",
-        `Descuento adicional (${pct}%): -${money(d)}`,
-        money(x.total),""
-      ];
-    }).filter(Boolean),
-    `TOTAL: ${money(total)}`
-  ].join("\\n");
+    const lines=[
+      `*CORTINA ${i+1}*`,
+      `📐 ${dimensions}`,
+      x.m?`⚙️ *Mecanismo:* ${x.m}`:"",
+      x.t?`🪟 *Tela:* ${x.t}`:"",
+      x.a?`➕ *Accesorio:* ${x.aq} × ${x.a}`:"",
+      "",
+      `*Subtotal:* ${money(x.subtotal||x.total+d)}`,
+      pct>0?`*Descuento adicional (${pct}%):* -${money(d)}`:"",
+      `*Precio:* ${money(x.total)}`
+    ].filter(Boolean);
+
+    return lines.join("\n");
+  });
+
+  const msg=[
+    "🟢 *PRESUPUESTO DE CORTINAS*",
+    "",
+    ...blocks.flatMap((block,i)=>i<blocks.length-1?[block,"──────────────",""]:[block]),
+    "",
+    "━━━━━━━━━━━━━━",
+    `*TOTAL: ${money(total)}*`
+  ].join("\n");
 
   open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 }
