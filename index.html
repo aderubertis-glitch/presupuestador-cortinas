@@ -58,11 +58,23 @@
 
     <details>
       <summary>Agregar accesorio (opcional)</summary>
+
+      <label for="tipoAccesorio">Tipo de accesorio</label>
+      <select id="tipoAccesorio">
+        <option value="">Elegir tipo de accesorio</option>
+      </select>
+
+      <label for="subtipoAccesorio">Subtipo de accesorio</label>
+      <select id="subtipoAccesorio" disabled>
+        <option value="">Elegir subtipo</option>
+      </select>
+
       <label>Accesorio</label>
-      <button id="accesorioPicker" class="picker-field" type="button">
-        <span id="accesorioPickerText">Sin accesorio</span><span class="picker-arrow">⌄</span>
+      <button id="accesorioPicker" class="picker-field" type="button" disabled>
+        <span id="accesorioPickerText">Elegir accesorio</span><span class="picker-arrow">⌄</span>
       </button>
       <input id="accesorio" type="hidden">
+
       <label for="cantidadAccesorio">Cantidad de accesorio</label>
       <input id="cantidadAccesorio" type="number" min="1" value="1">
     </details>

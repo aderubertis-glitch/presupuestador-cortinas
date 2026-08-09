@@ -14,12 +14,49 @@ function mechanismSubtypes(){return unique(PRODUCTOS.mecanismos.filter(x=>x.grup
 function mechanismItems(){return PRODUCTOS.mecanismos.filter(x=>x.grupo===grupoMecanismo.value&&x.tipo===tipoMecanismo.value&&x.subtipo===subtipoMecanismo.value)}
 function fabricTypes(){return unique(PRODUCTOS.telas.filter(x=>x.grupo===grupoMecanismo.value).map(x=>x.subtipo))}
 function fabricItems(){return PRODUCTOS.telas.filter(x=>x.grupo===grupoMecanismo.value&&x.subtipo===subtipoTela.value)}
+function accessoryTypes(){return unique(PRODUCTOS.accesorios.filter(x=>x.grupo===grupoMecanismo.value).map(x=>x.tipo))}
+function accessorySubtypes(){return unique(PRODUCTOS.accesorios.filter(x=>x.grupo===grupoMecanismo.value&&x.tipo===tipoAccesorio.value).map(x=>x.subtipo))}
+function accessoryItems(){return PRODUCTOS.accesorios.filter(x=>x.grupo===grupoMecanismo.value&&x.tipo===tipoAccesorio.value&&x.subtipo===subtipoAccesorio.value)}
+
+function loadAccessoryTypes(){
+  tipoAccesorio.value="";
+  subtipoAccesorio.value="";
+  accesorio.value="";
+  accesorioPickerText.textContent="Elegir accesorio";
+  const group=grupoMecanismo.value;
+  const types=accessoryTypes();
+  tipoAccesorio.disabled=!group||types.length===0;
+  tipoAccesorio.innerHTML=types.length?option("","Elegir tipo de accesorio")+types.map(x=>option(x)).join(""):option("",group?"Sin accesorios para este grupo":"Primero elegí un grupo");
+  subtipoAccesorio.disabled=true;
+  subtipoAccesorio.innerHTML=option("","Primero elegí un tipo");
+  accesorioPicker.disabled=true;
+}
+
+function loadAccessorySubtypes(){
+  subtipoAccesorio.value="";
+  accesorio.value="";
+  accesorioPickerText.textContent="Elegir accesorio";
+  const type=tipoAccesorio.value;
+  const subs=accessorySubtypes();
+  subtipoAccesorio.disabled=!type;
+  subtipoAccesorio.innerHTML=type?option("","Elegir subtipo")+subs.map(x=>option(x)).join(""):option("","Primero elegí un tipo");
+  accesorioPicker.disabled=true;
+  calculate();
+}
+
+function enableAccessoryPicker(){
+  accesorio.value="";
+  accesorioPickerText.textContent="Elegir accesorio";
+  accesorioPicker.disabled=!subtipoAccesorio.value;
+  calculate();
+}
 
 function init(){
   grupoMecanismo.innerHTML=option("","Elegir grupo")+mechanismGroups().map(x=>option(x)).join("");
   discountPercent.value=state.discount;
   resetMechanismHierarchy();
   loadFabricTypes();
+  loadAccessoryTypes();
 }
 
 function resetMechanismHierarchy(){
@@ -127,7 +164,7 @@ function itemCost(item,w,h,q,extraQty=1){
 function calculate(){
   const m=exact(mechanismItems(),mecanismo.value);
   const t=exact(fabricItems(),tela.value);
-  const a=exact(PRODUCTOS.accesorios,accesorio.value);
+  const a=exact(accessoryItems(),accesorio.value);
   const w=num(ancho.value),h=num(largo.value),q=Math.max(1,+cantidad.value||1),aq=Math.max(1,+cantidadAccesorio.value||1);
 
   const mt=itemCost(m,w,h,q,1);
@@ -170,7 +207,7 @@ function render(){
         ${x.q} × ${x.w.toFixed(2).replace(".",",")} m × ${x.h.toFixed(2).replace(".",",")} m
         ${mechanismText?`<br>${mechanismText}`:""}
         ${fabricText?`<br>${fabricText}`:""}
-        ${x.a?`<br>Accesorio: ${x.aq} × ${esc(x.a)}`:""}
+        ${x.a?`<br>Accesorio: ${x.tipoA?esc(x.tipoA)+" → ":""}${x.subtipoA?esc(x.subtipoA)+" → ":""}${x.aq} × ${esc(x.a)}`:""}
       </div>
       <div class="actions">
         <button class="edit" onclick="editLine(${x.id})">Editar</button>
@@ -197,7 +234,7 @@ function clearEntry(resetAll=false){
   }
   tela.value="";telaPickerText.textContent="Elegir tela";
   ancho.value="";largo.value="";cantidad.value=1;
-  accesorio.value="";accesorioPickerText.textContent="Sin accesorio";cantidadAccesorio.value=1;
+  loadAccessoryTypes();cantidadAccesorio.value=1;
   calculate();
 }
 
@@ -216,6 +253,8 @@ function addLine(){
     m:c.m?.descripcion||"",
     subtipoTela:c.t?subtipoTela.value:"",
     t:c.t?.descripcion||"",
+    tipoA:c.a?tipoAccesorio.value:"",
+    subtipoA:c.a?subtipoAccesorio.value:"",
     a:c.a?.descripcion||"",
     w:c.w,h:c.h,q:c.q,aq:c.a?c.aq:0,
     subtotal:c.subtotal,discountPct:state.discount,total:c.total
@@ -266,8 +305,15 @@ function editLine(id){
   ancho.value=String(x.w).replace(".",",");
   largo.value=String(x.h).replace(".",",");
   cantidad.value=x.q;
-  accesorio.value=x.a||"";
-  accesorioPickerText.textContent=x.a||"Sin accesorio";
+  loadAccessoryTypes();
+  if(x.a){
+    tipoAccesorio.value=x.tipoA||"";
+    loadAccessorySubtypes();
+    subtipoAccesorio.value=x.subtipoA||"";
+    enableAccessoryPicker();
+    accesorio.value=x.a;
+    accesorioPickerText.textContent=x.a;
+  }
   cantidadAccesorio.value=x.aq||1;
 
   state.discount=Number(x.discountPct||0);
@@ -309,8 +355,15 @@ function copyLast(){
   ancho.value=String(x.w).replace(".",",");
   largo.value=String(x.h).replace(".",",");
   cantidad.value=x.q;
-  accesorio.value=x.a||"";
-  accesorioPickerText.textContent=x.a||"Sin accesorio";
+  loadAccessoryTypes();
+  if(x.a){
+    tipoAccesorio.value=x.tipoA||"";
+    loadAccessorySubtypes();
+    subtipoAccesorio.value=x.subtipoA||"";
+    enableAccessoryPicker();
+    accesorio.value=x.a;
+    accesorioPickerText.textContent=x.a;
+  }
   cantidadAccesorio.value=x.aq||1;
 
   state.discount=Number(x.discountPct||0);
@@ -342,7 +395,7 @@ function sendWhatsApp(){
         x.m?`${x.grupo} / ${x.tipoM} / ${x.subtipoM}`:"",
         x.m?x.m:"",
         x.t?`${x.subtipoTela}: ${x.t}`:"",
-        x.a?`Accesorio: ${x.aq} × ${x.a}`:"",
+        x.a?`Accesorio: ${x.tipoA?x.tipoA+" / ":""}${x.subtipoA?x.subtipoA+" / ":""}${x.aq} × ${x.a}`:"",
         `Descuento adicional (${pct}%): -${money(d)}`,
         money(x.total),""
       ];
@@ -353,7 +406,7 @@ function sendWhatsApp(){
   open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 }
 
-grupoMecanismo.addEventListener("change",()=>{loadMechanismTypes();loadFabricTypes();calculate();});
+grupoMecanismo.addEventListener("change",()=>{loadMechanismTypes();loadFabricTypes();loadAccessoryTypes();calculate();});
 tipoMecanismo.addEventListener("change",()=>{loadMechanismSubtypes();calculate();});
 subtipoMecanismo.addEventListener("change",enableMechanismPicker);
 subtipoTela.addEventListener("change",enableFabricPicker);
@@ -362,7 +415,9 @@ discountPercent.addEventListener("input",()=>{state.discount=Math.min(100,Math.m
 
 mecanismoPicker.addEventListener("click",()=>openPicker("mecanismo","Elegir mecanismo",mechanismItems()));
 telaPicker.addEventListener("click",()=>openPicker("tela","Elegir tela",fabricItems()));
-accesorioPicker.addEventListener("click",()=>openPicker("accesorio","Elegir accesorio",PRODUCTOS.accesorios));
+tipoAccesorio.addEventListener("change",loadAccessorySubtypes);
+subtipoAccesorio.addEventListener("change",enableAccessoryPicker);
+accesorioPicker.addEventListener("click",()=>openPicker("accesorio","Elegir accesorio",accessoryItems()));
 pickerSearch.addEventListener("input",renderPickerList);pickerClose.addEventListener("click",closePicker);
 pickerModal.querySelector(".picker-backdrop").addEventListener("click",closePicker);
 
