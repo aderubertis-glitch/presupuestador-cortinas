@@ -192,7 +192,7 @@ function calculate(){
   lineDiscountLabel.textContent=`Descuento adicional (${pct}%)`;
   lineDiscount.textContent="-"+money(discount);
   lineTotal.textContent=money(total);
-  return{m,t,a,w,h,q,aq,subtotal,discount,total};
+  return{m,t,a,w,h,q,aq,mt,tt,at,subtotal,discount,total};
 }
 
 function save(){
@@ -276,6 +276,9 @@ function addLine(){
     subtipoA:c.a?subtipoAccesorio.value:"",
     a:c.a?.descripcion||"",
     w:c.w,h:c.h,q:c.q,aq:c.a?c.aq:0,
+    mecanismoImporte:c.mt,
+    telaImporte:c.tt,
+    accesorioImporte:c.at,
     subtotal:c.subtotal,discountPct:state.discount,total:c.total
   });
 
@@ -403,37 +406,64 @@ function newBudget(){
 function sendWhatsApp(){
   if(!state.lines.length)return alert("Agregá al menos una cortina.");
 
-  const total=state.lines.reduce((s,x)=>s+x.total,0);
+  const totalPresupuesto=state.lines.reduce((s,x)=>s+x.total,0);
 
   const blocks=state.lines.map((x,i)=>{
     const pct=Number(x.discountPct||0);
-    const d=(x.subtotal||0)*pct/100;
+    const descuento=(x.subtotal||0)*pct/100;
+
     const dimensions=(x.w>0||x.h>0)
       ? `${x.q} × ${x.w>0?x.w.toFixed(2).replace(".",",")+" m":""}${x.w>0&&x.h>0?" × ":""}${x.h>0?x.h.toFixed(2).replace(".",",")+" m":""}`
       : `Cantidad: ${x.q}`;
 
+    // Compatibilidad con presupuestos guardados antes de esta versión:
+    let importeMecanismo=Number(x.mecanismoImporte||0);
+    let importeTela=Number(x.telaImporte||0);
+    let importeAccesorio=Number(x.accesorioImporte||0);
+
+    if(x.m && !importeMecanismo){
+      const item=PRODUCTOS.mecanismos.find(p=>p.descripcion===x.m);
+      if(item) importeMecanismo=itemCost(item,x.w,x.h,x.q,1);
+    }
+    if(x.t && !importeTela){
+      const item=PRODUCTOS.telas.find(p=>p.descripcion===x.t);
+      if(item) importeTela=itemCost(item,x.w,x.h,x.q,1);
+    }
+    if(x.a && !importeAccesorio){
+      const item=PRODUCTOS.accesorios.find(p=>p.descripcion===x.a);
+      if(item) importeAccesorio=itemCost(item,x.w,x.h,x.q,x.aq||1);
+    }
+
     const lines=[
       `*CORTINA ${i+1}*`,
       `📐 ${dimensions}`,
-      x.m?`⚙️ *Mecanismo:* ${x.m}`:"",
-      x.t?`🪟 *Tela:* ${x.t}`:"",
-      x.a?`➕ *Accesorio:* ${x.aq} × ${x.a}`:"",
       "",
-      `*Subtotal:* ${money(x.subtotal||x.total+d)}`,
-      pct>0?`*Descuento adicional (${pct}%):* -${money(d)}`:"",
-      `*Precio:* ${money(x.total)}`
-    ].filter(Boolean);
+      x.m?`⚙️ *Mecanismo:* ${x.m}`:"",
+      x.m?`   *Precio mecanismo:* ${money(importeMecanismo)}`:"",
+      x.t?`🪟 *Tela:* ${x.t}`:"",
+      x.t?`   *Precio tela:* ${money(importeTela)}`:"",
+      x.a?`➕ *Accesorio:* ${x.aq} × ${x.a}`:"",
+      x.a?`   *Precio accesorio:* ${money(importeAccesorio)}`:"",
+      pct>0?"":"",
+      pct>0?`*Descuento adicional (${pct}%):* -${money(descuento)}`:"",
+      "",
+      `*TOTAL CORTINA ${i+1}: ${money(x.total)}*`
+    ].filter(line=>line!==null&&line!==undefined&&line!=="");
 
     return lines.join("\n");
   });
 
   const msg=[
-    "🟢 *PRESUPUESTO DE CORTINAS*",
+    "🟢 *PRESUPUESTO*",
     "",
-    ...blocks.flatMap((block,i)=>i<blocks.length-1?[block,"──────────────",""]:[block]),
+    ...blocks.flatMap((block,i)=>
+      i<blocks.length-1
+        ? [block,"","──────────────",""]
+        : [block]
+    ),
     "",
     "━━━━━━━━━━━━━━",
-    `*TOTAL: ${money(total)}*`
+    `*TOTAL PRESUPUESTO: ${money(totalPresupuesto)}*`
   ].join("\n");
 
   open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");

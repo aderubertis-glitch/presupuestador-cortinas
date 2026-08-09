@@ -1,8 +1,9 @@
-# Presupuestador - mensaje de WhatsApp mejorado
+# Presupuestador - WhatsApp detallado
 
-El mensaje enviado por WhatsApp ahora:
-- usa títulos y etiquetas claras;
-- separa mecanismo, tela y accesorios;
-- muestra subtotal y descuento solo cuando corresponde;
-- omite la línea de descuento si es 0%;
-- destaca el precio de cada cortina y el total general.
+El mensaje de WhatsApp ahora:
+- se titula "PRESUPUESTO";
+- muestra por separado mecanismo, tela y accesorio;
+- muestra el precio individual de cada ítem;
+- muestra el descuento adicional solo si es mayor a 0%;
+- muestra TOTAL CORTINA 1, TOTAL CORTINA 2, etc.;
+- al final muestra TOTAL PRESUPUESTO.
