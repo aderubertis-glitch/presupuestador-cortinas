@@ -25,3 +25,17 @@ button{width:100%;min-height:54px;margin-top:11px;padding:12px 15px;border:0;bor
 .component-qty{margin-bottom:4px}
 
 .minimum-note{color:#8a5a14;font-size:13px;font-weight:600}
+
+.optional-question{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--soft);font-weight:700}
+.yes-no{display:flex;gap:6px;flex-shrink:0}
+.choice-btn{width:auto;min-height:36px;margin:0;padding:7px 13px;border:1px solid #a9c7b4;background:#fff;color:var(--brand);font-size:14px}
+.choice-btn.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+.optional-content[hidden]{display:none}
+.optional-content{margin-top:10px;padding-top:4px}
+.secondary{background:#e5f1e9;color:var(--brand)}
+.add-multi-btn:disabled{background:#e9eeeb;color:#99a39d}
+.multi-list{margin-top:12px}
+.multi-empty{padding:10px 0;color:var(--muted);font-size:14px}
+.multi-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.multi-meta{margin-top:3px;color:var(--muted);font-size:13px}
+.multi-remove{width:auto;min-height:36px;margin:0;padding:7px 10px;background:#fde9e7;color:var(--danger);font-size:13px}

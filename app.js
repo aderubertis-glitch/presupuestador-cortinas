@@ -14,6 +14,13 @@ function isMultiAccessoryComponent(name){
   return n.includes("accesorio");
 }
 function normalize(v){return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()}
+function isAccessory(name){return normalize(name).includes("accesorio")}
+function isRepair(name){return normalize(name).includes("repar")}
+function isOptionalToggle(name){return isAccessory(name)||isRepair(name)}
+function optionalQuestion(name){
+  if(isRepair(name)) return "¿Desea agregar reparación?";
+  return "¿Desea agregar un accesorio?";
+}
 
 function init(){
   tipoCortina.innerHTML='<option value="">Elegir tipo</option>'+unique(Object.keys(CONFIG)).map(x=>`<option>${esc(x)}</option>`).join("");
@@ -28,13 +35,16 @@ function renderComponents(){
 
   cfg.forEach((c,idx)=>{
     const id="c"+idx;
-    const multi=isMultiAccessoryComponent(c.componente);
+    const multi=isAccessory(c.componente);
+    const toggle=isOptionalToggle(c.componente);
 
     state.components[id]={
       config:c,
       selected:"",
       filters:["","","",""],
       multi,
+      toggle,
+      enabled:!toggle,
       added:[]
     };
 
@@ -42,38 +52,86 @@ function renderComponents(){
     block.className="component";
     block.id=id;
 
-    block.innerHTML=multi
-      ? `<h3>${esc(c.componente)} <span class="optional">(podés agregar varios)</span></h3>
-         <div class="filters"></div>
-         <label>Artículo</label>
-         <button type="button" class="picker-field" disabled>
-           <span>Elegir ${esc(c.componente.toLowerCase())}</span><span>⌄</span>
-         </button>
-         <label>Cantidad</label>
-         <input class="component-qty" type="number" min="1" value="1">
-         <button type="button" class="secondary add-multi-btn" disabled>Agregar accesorio</button>
-         <div class="multi-list"></div>`
-      : `<h3>${esc(c.componente)} <span class="optional">(opcional)</span></h3>
-         <div class="filters"></div>
-         <label>Artículo</label>
-         <button type="button" class="picker-field" disabled>
-           <span>Elegir ${esc(c.componente.toLowerCase())}</span><span>⌄</span>
-         </button>`;
+    const inner=multi
+      ? `<div class="component-fields">
+           <div class="filters"></div>
+           <label>Artículo</label>
+           <button type="button" class="picker-field" disabled>
+             <span>Elegir ${esc(c.componente.toLowerCase())}</span><span>⌄</span>
+           </button>
+           <label>Cantidad</label>
+           <input class="component-qty" type="number" min="1" value="1">
+           <button type="button" class="secondary add-multi-btn" disabled>Agregar accesorio</button>
+           <div class="multi-list"></div>
+         </div>`
+      : `<div class="component-fields">
+           <div class="filters"></div>
+           <label>Artículo</label>
+           <button type="button" class="picker-field" disabled>
+             <span>Elegir ${esc(c.componente.toLowerCase())}</span><span>⌄</span>
+           </button>
+         </div>`;
+
+    block.innerHTML=toggle
+      ? `<h3>${esc(c.componente)}</h3>
+         <div class="optional-question">
+           <span>${esc(optionalQuestion(c.componente))}</span>
+           <div class="yes-no">
+             <button type="button" class="choice-btn active" data-value="no">No</button>
+             <button type="button" class="choice-btn" data-value="yes">Sí</button>
+           </div>
+         </div>
+         <div class="optional-content" hidden>${inner}</div>`
+      : `<h3>${esc(c.componente)} <span class="optional">(opcional)</span></h3>${inner}`;
 
     componentes.appendChild(block);
-    renderFilters(id);
 
-    block.querySelector(".picker-field").addEventListener("click",()=>openPicker(id));
+    if(toggle){
+      block.querySelectorAll(".choice-btn").forEach(btn=>
+        btn.addEventListener("click",()=>setOptionalEnabled(id,btn.dataset.value==="yes"))
+      );
+    }else{
+      renderFilters(id);
+      block.querySelector(".picker-field").addEventListener("click",()=>openPicker(id));
+    }
 
     if(multi){
       const qty=block.querySelector(".component-qty");
-      const addBtn=block.querySelector(".add-multi-btn");
+      const addMulti=block.querySelector(".add-multi-btn");
       qty.addEventListener("input",()=>updateMultiButton(id));
-      addBtn.addEventListener("click",()=>addMultiItem(id));
+      addMulti.addEventListener("click",()=>addMultiItem(id));
       renderMultiList(id);
     }
   });
 
+  calculate();
+}
+
+function setOptionalEnabled(id,enabled){
+  const st=state.components[id],block=$(id);
+  if(!st)return;
+  st.enabled=enabled;
+
+  block.querySelectorAll(".choice-btn").forEach(btn=>{
+    btn.classList.toggle("active",(btn.dataset.value==="yes")===enabled);
+  });
+
+  const content=block.querySelector(".optional-content");
+  if(content)content.hidden=!enabled;
+
+  if(enabled){
+    renderFilters(id);
+    const picker=block.querySelector(".picker-field");
+    if(picker && !picker.dataset.bound){
+      picker.addEventListener("click",()=>openPicker(id));
+      picker.dataset.bound="1";
+    }
+    if(st.multi)renderMultiList(id);
+  }else{
+    st.selected="";
+    st.filters=["","","",""];
+    st.added=[];
+  }
   calculate();
 }
 function candidates(id,upto=4){
@@ -109,12 +167,14 @@ function filtersComplete(id){
   return st.config.labels.every((label,i)=>!label||!!st.filters[i]);
 }
 function updatePickerButton(id){
-  const st=state.components[id],btn=$(id).querySelector(".picker-field");
-  btn.disabled=!filtersComplete(id);
+  const st=state.components[id],block=$(id);
+  if(!st||!block)return;
+  const btn=block.querySelector(".picker-field");
+  if(!btn)return;
+  btn.disabled=!st.enabled||!filtersComplete(id);
   btn.querySelector("span").textContent=st.selected||`Elegir ${st.config.componente.toLowerCase()}`;
-  if(st.multi) updateMultiButton(id);
+  if(st.multi)updateMultiButton(id);
 }
-
 function updateMultiButton(id){
   const st=state.components[id], block=$(id);
   if(!st?.multi||!block)return;
@@ -195,34 +255,16 @@ function closePicker(){pickerModal.hidden=true;document.body.classList.remove("m
 
 function selectedItems(){
   const out=[];
-
   Object.entries(state.components).forEach(([id,st])=>{
+    if(!st.enabled)return;
     if(st.multi){
-      st.added.forEach(entry=>{
-        out.push({
-          id,
-          product:entry.product,
-          component:st.config.componente,
-          itemQty:entry.qty,
-          multi:true
-        });
-      });
+      st.added.forEach(entry=>out.push({id,product:entry.product,component:st.config.componente,itemQty:entry.qty,multi:true}));
       return;
     }
-
     if(!st.selected)return;
     const p=candidates(id).find(x=>x.descripcion===st.selected);
-    if(p){
-      out.push({
-        id,
-        product:p,
-        component:st.config.componente,
-        itemQty:1,
-        multi:false
-      });
-    }
+    if(p)out.push({id,product:p,component:st.config.componente,itemQty:1,multi:false});
   });
-
   return out;
 }
 function requiredDims(items){

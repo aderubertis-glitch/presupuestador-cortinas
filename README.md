@@ -1,8 +1,8 @@
-# Presupuestador - corrección de lectura del Excel
+# Presupuestador - opcionales por tipo
 
-Corrección importante:
-- La app ya no identifica Unidad, Precio, filtros, etc. por número de columna.
-- Ahora los identifica por el nombre del encabezado del Excel.
-- Esto evita que agregar/mover columnas desplace los datos.
-- Roller vuelve a detectar ML y M2 correctamente, por lo que muestra Ancho y Largo.
-- Se mantienen mínimos de 1 ML / 1 m2, múltiples accesorios, descuentos y medidas con 3 decimales.
+- Accesorios: pregunta Sí/No por cada tipo de cortina que tenga ese componente.
+- Reparaciones: pregunta Sí/No por cada tipo de cortina que tenga ese componente.
+- En No los campos quedan ocultos.
+- En Sí se habilitan los filtros y artículos configurados en Parámetros.
+- Accesorios permite agregar varios artículos con cantidades independientes.
+- Se mantienen ancho/largo, mínimos de venta, descuentos, medidas con 3 decimales y WhatsApp.
