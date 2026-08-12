@@ -1,10 +1,9 @@
-# Presupuestador dinámico - múltiples accesorios
+# Presupuestador - mínimos de venta
 
-Cambios:
-- Los componentes cuyo nombre contiene "Accesorio" permiten agregar varios artículos.
-- Cada accesorio tiene su propia cantidad.
-- Se pueden combinar accesorios distintos dentro de una misma cortina.
-- Cada accesorio conserva su unidad, precio y regla de descuento del 40%.
-- El total de la cortina suma todos los accesorios.
-- WhatsApp muestra cada accesorio por separado con su cantidad y precio.
-- La máscara dinámica y las medidas con 3 decimales se mantienen.
+Reglas nuevas:
+- Artículos por ML: mínimo facturable 1,000 ML por cortina.
+- Artículos por M2: mínimo facturable 1,000 m² por cortina.
+- Si la medida real supera el mínimo, se factura la medida real.
+- Unidad/Kit/Set y similares no cambian.
+- Cuando se aplica un mínimo, la app lo informa en el desglose y en WhatsApp.
+- Se mantienen máscara dinámica, múltiples accesorios, descuentos y medidas con 3 decimales.

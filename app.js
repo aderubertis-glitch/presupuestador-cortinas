@@ -234,11 +234,45 @@ function updateMeasureVisibility(items){
   medidas.hidden=!(d.w||d.h);anchoWrap.hidden=!d.w;largoWrap.hidden=!d.h;
   return d;
 }
+function costInfo(p,w,h,q){
+  const unit=String(p.unidad||"").toLowerCase();
+  const price=p.precioSinIVA||0;
+
+  if(unit==="ml"){
+    const real=w;
+    const billable=Math.max(1,real);
+    return {
+      cost:billable*price*q,
+      realQty:real,
+      billableQty:billable,
+      minimumApplied:real>0&&real<1,
+      minimumText:real>0&&real<1?`Mínimo facturable: 1,000 ML (medida real ${fmtMeasure(real)} ML)`:""
+    };
+  }
+
+  if(unit==="m2"){
+    const real=w*h;
+    const billable=Math.max(1,real);
+    return {
+      cost:billable*price*q,
+      realQty:real,
+      billableQty:billable,
+      minimumApplied:real>0&&real<1,
+      minimumText:real>0&&real<1?`Mínimo facturable: 1,000 m² (superficie real ${fmtMeasure(real)} m²)`:""
+    };
+  }
+
+  return {
+    cost:price*q,
+    realQty:q,
+    billableQty:q,
+    minimumApplied:false,
+    minimumText:""
+  };
+}
+
 function baseCost(p,w,h,q){
-  const unit=String(p.unidad||"").toLowerCase(),price=p.precioSinIVA||0;
-  if(unit==="ml")return w*price*q;
-  if(unit==="m2")return w*h*price*q;
-  return price*q;
+  return costInfo(p,w,h,q).cost;
 }
 function calculate(){
   const items=selectedItems(),
@@ -253,7 +287,8 @@ function calculate(){
 
   items.forEach(({product,component,itemQty,multi})=>{
     const effectiveQty=multi ? itemQty*q : q;
-    const base=baseCost(product,w,h,effectiveQty);
+    const ci=costInfo(product,w,h,effectiveQty);
+    const base=ci.cost;
     const auto=product.aplica40?base*.40:0;
     const final=base-auto;
     subtotal+=final;
@@ -261,7 +296,10 @@ function calculate(){
     details.push({
       product,component,base,auto,final,
       itemQty:multi?itemQty:1,
-      multi
+      multi,
+      minimumApplied:ci.minimumApplied,
+      minimumText:ci.minimumText,
+      billableQty:ci.billableQty
     });
 
     itemBreakdown.insertAdjacentHTML("beforeend",
@@ -271,6 +309,7 @@ function calculate(){
        </div>
        <div class="break-detail">
          ${esc(product.descripcion)}<br>
+         ${ci.minimumApplied?`<span class="minimum-note">${esc(ci.minimumText)}</span><br>`:""}
          ${product.aplica40
            ? `<span class="auto-applied">40% automático: -${money(auto)}</span>`
            : `<span class="auto-no">40% automático: no aplica</span>`}
@@ -295,7 +334,7 @@ function addLine(){
   if(c.dims.w&&c.w<=0)return alert(c.dims.h?"Ingresá ancho y largo.":"Ingresá el ancho.");
   if(c.dims.h&&c.h<=0)return alert("Ingresá el largo.");
   state.lines.push({id:Date.now(),tipo:tipoCortina.value,w:c.w,h:c.h,q:c.q,pct:c.pct,subtotal:c.subtotal,total:c.total,
-    items:c.details.map(x=>({component:x.component,descripcion:x.product.descripcion,unidad:x.product.unidad,base:x.base,auto:x.auto,final:x.final,aplica40:x.product.aplica40,itemQty:x.itemQty||1,multi:!!x.multi}))});
+    items:c.details.map(x=>({component:x.component,descripcion:x.product.descripcion,unidad:x.product.unidad,base:x.base,auto:x.auto,final:x.final,aplica40:x.product.aplica40,itemQty:x.itemQty||1,multi:!!x.multi,minimumApplied:!!x.minimumApplied,minimumText:x.minimumText||"",billableQty:x.billableQty}))});
   save();renderBudget();clearEntry();
 }
 function clearEntry(){tipoCortina.value="";componentes.innerHTML="";state.components={};ancho.value="";largo.value="";cantidad.value=1;calculate();window.scrollTo({top:0,behavior:"smooth"})}
@@ -303,7 +342,7 @@ function removeLine(id){state.lines=state.lines.filter(x=>x.id!==id);save();rend
 function renderBudget(){
   budgetLines.innerHTML=state.lines.length?state.lines.map((x,i)=>`<article class="line"><div class="line-head"><span>${esc(x.tipo)} ${i+1}</span><span>${money(x.total)}</span></div>
     <div class="line-detail">${x.w||x.h?`${x.q} × ${x.w?fmtMeasure(x.w)+" m":""}${x.w&&x.h?" × ":""}${x.h?fmtMeasure(x.h)+" m":""}`:`Cantidad: ${x.q}`}
-    ${x.items.map(it=>`<br><b>${esc(it.component)}${it.multi?` × ${it.itemQty}`:""}:</b> ${esc(it.descripcion)} — ${money(it.final)}${it.auto>0?` <span class="auto-applied">(40%: -${money(it.auto)})</span>`:""}`).join("")}
+    ${x.items.map(it=>`<br><b>${esc(it.component)}${it.multi?` × ${it.itemQty}`:""}:</b> ${esc(it.descripcion)} — ${money(it.final)}${it.minimumApplied?` <span class="minimum-note">(${esc(it.minimumText)})</span>`:""}${it.auto>0?` <span class="auto-applied">(40%: -${money(it.auto)})</span>`:""}`).join("")}
     ${x.pct>0?`<br>Descuento adicional (${x.pct}%): -${money(x.subtotal*x.pct/100)}`:""}</div>
     <div class="actions"><button class="delete" onclick="removeLine(${x.id})">Eliminar</button></div></article>`).join(""):'<p class="empty">Todavía no agregaste nada.</p>';
   grandTotal.textContent=money(state.lines.reduce((s,x)=>s+x.total,0));itemCount.textContent=`${state.lines.length} ${state.lines.length===1?"ítem":"ítems"}`;
@@ -315,6 +354,7 @@ function sendWhatsApp(){
     x.items.forEach(it=>{
       lines.push(
         `*${it.component}${it.multi?` × ${it.itemQty}`:""}:* ${it.descripcion}`,
+        it.minimumApplied?`_${it.minimumText}_`:"",
         `Precio sin IVA: ${money(it.base)}`,
         it.auto>0?`40% automático: -${money(it.auto)}`:"40% automático: no aplica",
         `*Precio ${it.component.toLowerCase()}: ${money(it.final)}*`,

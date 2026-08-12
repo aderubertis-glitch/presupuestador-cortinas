@@ -23,3 +23,5 @@ button{width:100%;min-height:54px;margin-top:11px;padding:12px 15px;border:0;bor
 .multi-meta{margin-top:3px;color:var(--muted);font-size:13px}
 .multi-remove{width:auto;min-height:36px;margin:0;padding:7px 10px;background:#fde9e7;color:var(--danger);font-size:13px}
 .component-qty{margin-bottom:4px}
+
+.minimum-note{color:#8a5a14;font-size:13px;font-weight:600}
