@@ -1,10 +1,10 @@
-# Presupuestador - descuento automático por ítem
+# Presupuestador dinámico - múltiples accesorios
 
-Regla:
-- Cada artículo parte de su Precio sin IVA.
-- Si su descripción NO dice "NO APLICAN DESCUENTOS", recibe 40% automático.
-- Si dice "NO APLICAN DESCUENTOS", únicamente ese artículo conserva el 100% del Precio sin IVA.
-- Una cortina puede mezclar artículos con y sin 40%.
-- La app muestra el importe del 40% automático de cada mecanismo, tela y accesorio.
-- El descuento adicional manual sigue calculándose sobre el subtotal resultante.
-- Cabecera: "Precios sin IVA".
+Cambios:
+- Los componentes cuyo nombre contiene "Accesorio" permiten agregar varios artículos.
+- Cada accesorio tiene su propia cantidad.
+- Se pueden combinar accesorios distintos dentro de una misma cortina.
+- Cada accesorio conserva su unidad, precio y regla de descuento del 40%.
+- El total de la cortina suma todos los accesorios.
+- WhatsApp muestra cada accesorio por separado con su cantidad y precio.
+- La máscara dinámica y las medidas con 3 decimales se mantienen.

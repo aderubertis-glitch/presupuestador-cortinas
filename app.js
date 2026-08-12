@@ -1,574 +1,339 @@
 const $=id=>document.getElementById(id);
-const state={lines:JSON.parse(localStorage.getItem("presupuesto_lines")||"[]"),discount:Number(localStorage.getItem("presupuesto_discount") ?? 0)};
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const money=n=>new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS",maximumFractionDigits:0}).format(n||0);
+const fmtMeasure=n=>Number(n||0).toLocaleString("es-AR",{minimumFractionDigits:3,maximumFractionDigits:3});
 const num=v=>Number(String(v||"").trim().replace(/\./g,"").replace(",","."))||0;
-const hasNoDiscount=i=>{
-  const text=String(i?.descripcion||"")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g,"")
-    .toLowerCase();
-  return text.includes("no aplican descuentos") || text.includes("no aplica descuento");
-};
-
-const basePrice=i=>i?.precioSinIVA||0;
-const automaticDiscountRate=i=>i && !hasNoDiscount(i) ? 0.40 : 0;
-const price=i=>basePrice(i)*(1-automaticDiscountRate(i));
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const unique=a=>[...new Set(a.filter(v=>v!==undefined&&v!==null&&String(v)!=="").map(String))].sort((a,b)=>a.localeCompare(b,"es",{numeric:true}));
-const option=(value,text=value)=>`<option value="${esc(value)}">${esc(text)}</option>`;
-const exact=(list,value)=>list.find(x=>x.descripcion===value)||null;
+const state={lines:JSON.parse(localStorage.getItem("dynamic_budget_lines")||"[]"),discount:Number(localStorage.getItem("dynamic_budget_discount")||0),components:{}};
 
-function mechanismGroups(){return unique(PRODUCTOS.mecanismos.map(x=>x.grupo))}
-function mechanismTypes(){return unique(PRODUCTOS.mecanismos.filter(x=>x.grupo===grupoMecanismo.value).map(x=>x.tipo))}
-function mechanismSubtypes(){return unique(PRODUCTOS.mecanismos.filter(x=>x.grupo===grupoMecanismo.value&&x.tipo===tipoMecanismo.value).map(x=>x.subtipo))}
-function mechanismItems(){return PRODUCTOS.mecanismos.filter(x=>x.grupo===grupoMecanismo.value&&x.tipo===tipoMecanismo.value&&x.subtipo===subtipoMecanismo.value)}
-function fabricGroups(){return unique(PRODUCTOS.telas.map(x=>x.grupo))}
-function fabricTypes(){return unique(PRODUCTOS.telas.filter(x=>x.grupo===grupoTela.value).map(x=>x.subtipo))}
-function fabricItems(){return PRODUCTOS.telas.filter(x=>x.grupo===grupoTela.value&&x.subtipo===subtipoTela.value)}
-function accessoryTypes(){return unique(PRODUCTOS.accesorios.filter(x=>x.grupo===grupoMecanismo.value).map(x=>x.tipo))}
-function accessorySubtypes(){return unique(PRODUCTOS.accesorios.filter(x=>x.grupo===grupoMecanismo.value&&x.tipo===tipoAccesorio.value).map(x=>x.subtipo))}
-function accessoryItems(){return PRODUCTOS.accesorios.filter(x=>x.grupo===grupoMecanismo.value&&x.tipo===tipoAccesorio.value&&x.subtipo===subtipoAccesorio.value)}
-
-function loadAccessoryTypes(){
-  tipoAccesorio.value="";
-  subtipoAccesorio.value="";
-  accesorio.value="";
-  accesorioPickerText.textContent="Elegir accesorio";
-  const group=grupoMecanismo.value;
-  const types=accessoryTypes();
-  tipoAccesorio.disabled=!group||types.length===0;
-  tipoAccesorio.innerHTML=types.length?option("","Elegir tipo de accesorio")+types.map(x=>option(x)).join(""):option("",group?"Sin accesorios para este grupo":"Primero elegí un grupo");
-  subtipoAccesorio.disabled=true;
-  subtipoAccesorio.innerHTML=option("","Primero elegí un tipo");
-  accesorioPicker.disabled=true;
+function save(){localStorage.setItem("dynamic_budget_lines",JSON.stringify(state.lines));localStorage.setItem("dynamic_budget_discount",String(state.discount));}
+function typeProducts(){return PRODUCTOS.filter(p=>p.tipoCortina===tipoCortina.value)}
+function compProducts(comp){return typeProducts().filter(p=>p.componente===comp)}
+function isMultiAccessoryComponent(name){
+  const n=normalize(name);
+  return n.includes("accesorio");
 }
-
-function loadAccessorySubtypes(){
-  subtipoAccesorio.value="";
-  accesorio.value="";
-  accesorioPickerText.textContent="Elegir accesorio";
-  const type=tipoAccesorio.value;
-  const subs=accessorySubtypes();
-  subtipoAccesorio.disabled=!type;
-  subtipoAccesorio.innerHTML=type?option("","Elegir subtipo")+subs.map(x=>option(x)).join(""):option("","Primero elegí un tipo");
-  accesorioPicker.disabled=true;
-  calculate();
-}
-
-function enableAccessoryPicker(){
-  accesorio.value="";
-  accesorioPickerText.textContent="Elegir accesorio";
-  accesorioPicker.disabled=!subtipoAccesorio.value;
-  calculate();
-}
+function normalize(v){return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()}
 
 function init(){
-  grupoMecanismo.innerHTML=option("","Elegir grupo")+mechanismGroups().map(x=>option(x)).join("");
-  grupoTela.innerHTML=option("","Elegir grupo de tela")+fabricGroups().map(x=>option(x)).join("");
+  tipoCortina.innerHTML='<option value="">Elegir tipo</option>'+unique(Object.keys(CONFIG)).map(x=>`<option>${esc(x)}</option>`).join("");
   discountPercent.value=state.discount;
-  resetMechanismHierarchy();
-  loadFabricTypes();
-  loadAccessoryTypes();
+  renderBudget();calculate();
 }
 
-function resetMechanismHierarchy(){
-  tipoMecanismo.value="";
-  subtipoMecanismo.value="";
-  mecanismo.value="";
-  mecanismoPickerText.textContent="Elegir mecanismo";
-  tipoMecanismo.disabled=true;
-  subtipoMecanismo.disabled=true;
-  mecanismoPicker.disabled=true;
-  tipoMecanismo.innerHTML=option("","Primero elegí un grupo");
-  subtipoMecanismo.innerHTML=option("","Primero elegí un tipo");
-}
+function renderComponents(){
+  componentes.innerHTML="";
+  state.components={};
+  const cfg=CONFIG[tipoCortina.value]||[];
 
-function loadMechanismTypes(){
-  tipoMecanismo.value="";
-  subtipoMecanismo.value="";
-  mecanismo.value="";
-  mecanismoPickerText.textContent="Elegir mecanismo";
-  const group=grupoMecanismo.value;
-  const types=mechanismTypes();
-  tipoMecanismo.disabled=!group;
-  tipoMecanismo.innerHTML=group?option("","Elegir tipo")+types.map(x=>option(x)).join(""):option("","Primero elegí un grupo");
-  subtipoMecanismo.disabled=true;
-  subtipoMecanismo.innerHTML=option("","Primero elegí un tipo");
-  mecanismoPicker.disabled=true;
-}
+  cfg.forEach((c,idx)=>{
+    const id="c"+idx;
+    const multi=isMultiAccessoryComponent(c.componente);
 
-function loadMechanismSubtypes(){
-  subtipoMecanismo.value="";
-  mecanismo.value="";
-  mecanismoPickerText.textContent="Elegir mecanismo";
-  const type=tipoMecanismo.value;
-  const subs=mechanismSubtypes();
-  subtipoMecanismo.disabled=!type;
-  subtipoMecanismo.innerHTML=type?option("","Elegir subtipo")+subs.map(x=>option(x)).join(""):option("","Primero elegí un tipo");
-  mecanismoPicker.disabled=true;
-}
+    state.components[id]={
+      config:c,
+      selected:"",
+      filters:["","","",""],
+      multi,
+      added:[]
+    };
 
-function enableMechanismPicker(){
-  mecanismo.value="";
-  mecanismoPickerText.textContent="Elegir mecanismo";
-  mecanismoPicker.disabled=!subtipoMecanismo.value;
-  calculate();
-}
+    const block=document.createElement("div");
+    block.className="component";
+    block.id=id;
 
-function loadFabricTypes(){
-  subtipoTela.value="";
-  tela.value="";
-  telaPickerText.textContent="Elegir tela";
-  const group=grupoTela.value;
-  const types=fabricTypes();
-  subtipoTela.disabled=!group||types.length===0;
-  subtipoTela.innerHTML=types.length
-    ? option("","Elegir tipo de tela")+types.map(x=>option(x)).join("")
-    : option("",group?"Sin telas para este grupo":"Primero elegí un grupo de tela");
-  telaPicker.disabled=true;
-}
+    block.innerHTML=multi
+      ? `<h3>${esc(c.componente)} <span class="optional">(podés agregar varios)</span></h3>
+         <div class="filters"></div>
+         <label>Artículo</label>
+         <button type="button" class="picker-field" disabled>
+           <span>Elegir ${esc(c.componente.toLowerCase())}</span><span>⌄</span>
+         </button>
+         <label>Cantidad</label>
+         <input class="component-qty" type="number" min="1" value="1">
+         <button type="button" class="secondary add-multi-btn" disabled>Agregar accesorio</button>
+         <div class="multi-list"></div>`
+      : `<h3>${esc(c.componente)} <span class="optional">(opcional)</span></h3>
+         <div class="filters"></div>
+         <label>Artículo</label>
+         <button type="button" class="picker-field" disabled>
+           <span>Elegir ${esc(c.componente.toLowerCase())}</span><span>⌄</span>
+         </button>`;
 
-function enableFabricPicker(){
-  tela.value="";
-  telaPickerText.textContent="Elegir tela";
-  telaPicker.disabled=!subtipoTela.value;
-  calculate();
-}
+    componentes.appendChild(block);
+    renderFilters(id);
 
-function normalizeText(value){
-  return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
-}
+    block.querySelector(".picker-field").addEventListener("click",()=>openPicker(id));
 
-let activePicker=null;
-let activeItems=[];
-
-function renderPickerList(){
-  const q=normalizeText(pickerSearch.value);
-  const filtered=q?activeItems.filter(item=>normalizeText(item.descripcion).includes(q)):activeItems;
-  pickerResults.innerHTML=filtered.length
-    ? filtered.map(item=>`<button type="button" class="picker-option" data-value="${esc(item.descripcion)}">${esc(item.descripcion)}</button>`).join("")
-    : '<div class="picker-empty">No se encontraron resultados.</div>';
-
-  pickerResults.querySelectorAll(".picker-option").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      const value=btn.dataset.value;
-      if(activePicker==="mecanismo"){mecanismo.value=value;mecanismoPickerText.textContent=value;}
-      if(activePicker==="tela"){tela.value=value;telaPickerText.textContent=value;}
-      if(activePicker==="accesorio"){accesorio.value=value;accesorioPickerText.textContent=value||"Sin accesorio";}
-      closePicker();calculate();
-    });
+    if(multi){
+      const qty=block.querySelector(".component-qty");
+      const addBtn=block.querySelector(".add-multi-btn");
+      qty.addEventListener("input",()=>updateMultiButton(id));
+      addBtn.addEventListener("click",()=>addMultiItem(id));
+      renderMultiList(id);
+    }
   });
+
+  calculate();
 }
-function openPicker(type,title,items){
-  activePicker=type;activeItems=items;pickerTitle.textContent=title;pickerSearch.value="";
-  pickerModal.hidden=false;document.body.classList.add("modal-open");renderPickerList();
+function candidates(id,upto=4){
+  const st=state.components[id]; if(!st)return [];
+  let arr=compProducts(st.config.componente);
+  for(let i=0;i<upto;i++){ if(st.filters[i]) arr=arr.filter(p=>p.filtros[i]===st.filters[i]); }
+  return arr;
+}
+
+function renderFilters(id){
+  const st=state.components[id], block=$(id), wrap=block.querySelector(".filters");
+  wrap.innerHTML="";
+  st.config.labels.forEach((label,i)=>{
+    if(!label)return;
+    const lab=document.createElement("label"); lab.textContent=label;
+    const sel=document.createElement("select");
+    const vals=unique(candidates(id,i).map(p=>p.filtros[i]));
+    sel.innerHTML=`<option value="">Elegir ${esc(label.toLowerCase())}</option>`+vals.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");
+    sel.value=st.filters[i]||"";
+    sel.addEventListener("change",()=>{
+      st.filters[i]=sel.value;
+      for(let j=i+1;j<4;j++)st.filters[j]="";
+      st.selected="";
+      renderFilters(id);updatePickerButton(id);calculate();
+    });
+    wrap.append(lab,sel);
+  });
+  updatePickerButton(id);
+}
+
+function filtersComplete(id){
+  const st=state.components[id];
+  return st.config.labels.every((label,i)=>!label||!!st.filters[i]);
+}
+function updatePickerButton(id){
+  const st=state.components[id],btn=$(id).querySelector(".picker-field");
+  btn.disabled=!filtersComplete(id);
+  btn.querySelector("span").textContent=st.selected||`Elegir ${st.config.componente.toLowerCase()}`;
+  if(st.multi) updateMultiButton(id);
+}
+
+function updateMultiButton(id){
+  const st=state.components[id], block=$(id);
+  if(!st?.multi||!block)return;
+  const addBtn=block.querySelector(".add-multi-btn");
+  const qty=Math.max(1,Number(block.querySelector(".component-qty")?.value)||1);
+  addBtn.disabled=!st.selected||qty<1;
+}
+
+function addMultiItem(id){
+  const st=state.components[id], block=$(id);
+  if(!st?.multi||!st.selected)return;
+
+  const product=candidates(id).find(x=>x.descripcion===st.selected);
+  if(!product)return;
+
+  const qty=Math.max(1,Number(block.querySelector(".component-qty").value)||1);
+
+  st.added.push({
+    uid:Date.now()+Math.random(),
+    descripcion:product.descripcion,
+    product,
+    qty,
+    filters:[...st.filters]
+  });
+
+  st.selected="";
+  st.filters=["","","",""];
+  block.querySelector(".component-qty").value=1;
+  renderFilters(id);
+  renderMultiList(id);
+  calculate();
+}
+
+function removeMultiItem(id,uid){
+  const st=state.components[id];
+  if(!st)return;
+  st.added=st.added.filter(x=>String(x.uid)!==String(uid));
+  renderMultiList(id);
+  calculate();
+}
+
+function renderMultiList(id){
+  const st=state.components[id], block=$(id);
+  if(!st?.multi||!block)return;
+
+  const list=block.querySelector(".multi-list");
+  list.innerHTML=st.added.length
+    ? st.added.map((x,i)=>`
+      <div class="multi-item">
+        <div>
+          <b>${esc(x.descripcion)}</b>
+          <div class="multi-meta">Cantidad: ${x.qty}</div>
+        </div>
+        <button type="button" class="multi-remove" data-uid="${x.uid}">Eliminar</button>
+      </div>`).join("")
+    : '<div class="multi-empty">Todavía no agregaste accesorios.</div>';
+
+  list.querySelectorAll(".multi-remove").forEach(btn=>
+    btn.addEventListener("click",()=>removeMultiItem(id,btn.dataset.uid))
+  );
+}
+let activeComponent=null;
+function openPicker(id){
+  activeComponent=id;pickerTitle.textContent=`Elegir ${state.components[id].config.componente}`;
+  pickerSearch.value="";pickerModal.hidden=false;document.body.classList.add("modal-open");renderPicker();
   setTimeout(()=>pickerSearch.focus(),80);
 }
-function closePicker(){pickerModal.hidden=true;document.body.classList.remove("modal-open");activePicker=null;activeItems=[];}
-
-function itemCost(item,w,h,q,extraQty=1){
-  if(!item)return 0;
-  const p=price(item);
-  const unit=(item.unidad||"").toLowerCase();
-  if(unit==="ml") return w*p*q*extraQty;
-  if(unit==="m2") return w*h*p*q*extraQty;
-  return p*q*extraQty;
+function renderPicker(){
+  const q=normalize(pickerSearch.value);
+  let arr=candidates(activeComponent);
+  if(q)arr=arr.filter(p=>normalize(p.descripcion).includes(q));
+  pickerResults.innerHTML=arr.length?arr.map((p,i)=>`<button class="picker-option" data-desc="${esc(p.descripcion)}">${esc(p.descripcion)}</button>`).join(""):'<div class="picker-empty">No se encontraron resultados.</div>';
+  pickerResults.querySelectorAll(".picker-option").forEach(b=>b.addEventListener("click",()=>{
+    state.components[activeComponent].selected=b.dataset.desc;updatePickerButton(activeComponent);closePicker();calculate();
+  }));
 }
+function closePicker(){pickerModal.hidden=true;document.body.classList.remove("modal-open");activeComponent=null}
 
-function itemBaseCost(item,w,h,q,extraQty=1){
-  if(!item)return 0;
-  const p=basePrice(item);
-  const unit=(item.unidad||"").toLowerCase();
-  if(unit==="ml") return w*p*q*extraQty;
-  if(unit==="m2") return w*h*p*q*extraQty;
-  return p*q*extraQty;
+function selectedItems(){
+  const out=[];
+
+  Object.entries(state.components).forEach(([id,st])=>{
+    if(st.multi){
+      st.added.forEach(entry=>{
+        out.push({
+          id,
+          product:entry.product,
+          component:st.config.componente,
+          itemQty:entry.qty,
+          multi:true
+        });
+      });
+      return;
+    }
+
+    if(!st.selected)return;
+    const p=candidates(id).find(x=>x.descripcion===st.selected);
+    if(p){
+      out.push({
+        id,
+        product:p,
+        component:st.config.componente,
+        itemQty:1,
+        multi:false
+      });
+    }
+  });
+
+  return out;
 }
-
-function autoDiscountInfo(item,baseCost){
-  if(!item)return {amount:0,applies:false};
-  const applies=!hasNoDiscount(item);
-  return {amount:applies?baseCost*0.40:0,applies};
+function requiredDims(items){
+  const units=items.map(x=>String(x.product.unidad||"").toLowerCase());
+  return {w:units.some(u=>u==="ml"||u==="m2"),h:units.some(u=>u==="m2")};
 }
-
-function renderAutoDiscountDetail(element,item,info){
-  if(!element)return;
-  element.classList.remove("applied","no-discount");
-  if(!item){
-    element.textContent="";
-    return;
-  }
-  if(info.applies){
-    element.textContent=`40% automático: -${money(info.amount)}`;
-    element.classList.add("applied");
-  }else{
-    element.textContent="Sin 40% automático · artículo excluido de descuentos";
-    element.classList.add("no-discount");
-  }
+function updateMeasureVisibility(items){
+  const d=requiredDims(items);
+  medidas.hidden=!(d.w||d.h);anchoWrap.hidden=!d.w;largoWrap.hidden=!d.h;
+  return d;
 }
-
-function requiredDimensions(items){
-  const units=items.filter(Boolean).map(item=>String(item.unidad||"").toLowerCase());
-  return {
-    width: units.some(unit=>unit==="ml"||unit==="m2"),
-    height: units.some(unit=>unit==="m2")
-  };
+function baseCost(p,w,h,q){
+  const unit=String(p.unidad||"").toLowerCase(),price=p.precioSinIVA||0;
+  if(unit==="ml")return w*price*q;
+  if(unit==="m2")return w*h*price*q;
+  return price*q;
 }
-
 function calculate(){
-  const m=exact(mechanismItems(),mecanismo.value);
-  const t=exact(fabricItems(),tela.value);
-  const a=exact(accessoryItems(),accesorio.value);
-  const w=num(ancho.value),h=num(largo.value),q=Math.max(1,+cantidad.value||1),aq=Math.max(1,+cantidadAccesorio.value||1);
+  const items=selectedItems(),
+        dims=updateMeasureVisibility(items),
+        w=num(ancho.value),
+        h=num(largo.value),
+        q=Math.max(1,+cantidad.value||1);
 
-  const mb=itemBaseCost(m,w,h,q,1);
-  const tb=itemBaseCost(t,w,h,q,1);
-  const ab=itemBaseCost(a,w,h,q,aq);
+  let subtotal=0;
+  itemBreakdown.innerHTML="";
+  const details=[];
 
-  const mdi=autoDiscountInfo(m,mb);
-  const tdi=autoDiscountInfo(t,tb);
-  const adi=autoDiscountInfo(a,ab);
+  items.forEach(({product,component,itemQty,multi})=>{
+    const effectiveQty=multi ? itemQty*q : q;
+    const base=baseCost(product,w,h,effectiveQty);
+    const auto=product.aplica40?base*.40:0;
+    const final=base-auto;
+    subtotal+=final;
 
-  const mt=mb-mdi.amount;
-  const tt=tb-tdi.amount;
-  const at=ab-adi.amount;
+    details.push({
+      product,component,base,auto,final,
+      itemQty:multi?itemQty:1,
+      multi
+    });
 
-  const automaticDiscount=mdi.amount+tdi.amount+adi.amount;
-  const subtotal=mt+tt+at;
+    itemBreakdown.insertAdjacentHTML("beforeend",
+      `<div class="break-row">
+         <span>${esc(component)}${multi?` × ${itemQty}`:""}</span>
+         <b>${money(final)}</b>
+       </div>
+       <div class="break-detail">
+         ${esc(product.descripcion)}<br>
+         ${product.aplica40
+           ? `<span class="auto-applied">40% automático: -${money(auto)}</span>`
+           : `<span class="auto-no">40% automático: no aplica</span>`}
+       </div>`);
+  });
 
-  const pct=Math.min(100,Math.max(0,Number(state.discount)||0));
-  const discount=subtotal*pct/100;
-  const total=subtotal-discount;
+  const pct=Math.min(100,Math.max(0,Number(state.discount)||0)),
+        extra=subtotal*pct/100,
+        total=subtotal-extra;
 
-  mecanismoTotal.textContent=money(mt);
-  telaTotal.textContent=money(tt);
-  accesorioTotal.textContent=money(at);
-
-  renderAutoDiscountDetail(mecanismoAutoDiscount,m,mdi);
-  renderAutoDiscountDetail(telaAutoDiscount,t,tdi);
-  renderAutoDiscountDetail(accesorioAutoDiscount,a,adi);
-
-  lineSubtotal.textContent=money(subtotal);
-
-  if(autoDiscountSummary){
-    autoDiscountSummary.textContent=automaticDiscount>0
-      ? `Descuento automático total aplicado: -${money(automaticDiscount)}`
-      : "";
-  }
-
-  lineDiscountLabel.textContent=`Descuento adicional (${pct}%)`;
-  lineDiscount.textContent="-"+money(discount);
+  $("subtotal").textContent=money(subtotal);
+  additionalDiscountLabel.textContent=`Descuento adicional (${pct}%)`;
+  additionalDiscount.textContent="-"+money(extra);
   lineTotal.textContent=money(total);
 
-  return{
-    m,t,a,w,h,q,aq,
-    mecanismoBase:mb,telaBase:tb,accesorioBase:ab,
-    mecanismoAutoDiscount:mdi.amount,
-    telaAutoDiscount:tdi.amount,
-    accesorioAutoDiscount:adi.amount,
-    mt,tt,at,automaticDiscount,subtotal,discount,total
-  };
+  return {items,details,dims,w,h,q,subtotal,pct,extra,total};
 }
-
-function save(){
-  localStorage.setItem("presupuesto_lines",JSON.stringify(state.lines));
-  localStorage.setItem("presupuesto_discount",String(state.discount));
-}
-
-function render(){
-  budgetLines.innerHTML=state.lines.length?state.lines.map((x,i)=>{
-    const pct=Number(x.discountPct||0);
-    const discountAmount=(x.subtotal||0)*pct/100;
-
-    const mAuto=Number(x.mecanismoAutoDiscount||0);
-    const tAuto=Number(x.telaAutoDiscount||0);
-    const aAuto=Number(x.accesorioAutoDiscount||0);
-
-    const mechanismText=x.m
-      ? `${esc(x.grupo)} → ${x.tipoM?esc(x.tipoM)+" → ":""}${x.subtipoM?esc(x.subtipoM)+"<br>":""}${esc(x.m)}
-         <br><span class="line-auto-detail">${mAuto>0?`40% automático: -${money(mAuto)}`:"Sin 40% automático"}</span>`
-      : "";
-
-    const fabricText=x.t
-      ? `${x.grupoTela?esc(x.grupoTela)+" → ":""}${esc(x.subtipoTela)} → ${esc(x.t)}
-         <br><span class="line-auto-detail">${tAuto>0?`40% automático: -${money(tAuto)}`:"Sin 40% automático"}</span>`
-      : "";
-
-    const accessoryText=x.a
-      ? `Accesorio: ${x.tipoA?esc(x.tipoA)+" → ":""}${x.subtipoA?esc(x.subtipoA)+" → ":""}${x.aq} × ${esc(x.a)}
-         <br><span class="line-auto-detail">${aAuto>0?`40% automático: -${money(aAuto)}`:"Sin 40% automático"}</span>`
-      : "";
-
-    return `<article class="line">
-      <div class="line-head"><span>Cortina ${i+1}</span><span>${money(x.total)}</span></div>
-      <div class="line-detail">
-        ${(x.w>0||x.h>0)?`${x.q} × ${x.w>0?x.w.toFixed(2).replace(".",",")+" m":""}${x.w>0&&x.h>0?" × ":""}${x.h>0?x.h.toFixed(2).replace(".",",")+" m":""}`:`Cantidad: ${x.q}`}
-        ${mechanismText?`<br>${mechanismText}`:""}
-        ${fabricText?`<br>${fabricText}`:""}
-        ${accessoryText?`<br>${accessoryText}`:""}
-      </div>
-      <div class="actions">
-        <button class="edit" onclick="editLine(${x.id})">Editar</button>
-        <button class="delete" onclick="removeLine(${x.id})">Eliminar</button>
-      </div>
-      ${Number(x.automaticDiscount||0)>0?`<div class="line-auto-summary"><span>Descuento automático total</span><b>-${money(x.automaticDiscount)}</b></div>`:""}
-      <div class="line-discount-row">
-        <span>Descuento adicional (${pct}%)</span>
-        <b>-${money(discountAmount)}</b>
-      </div>
-    </article>`;
-  }).join(""):'<p class="empty">Todavía no agregaste ninguna cortina.</p>';
-
-  grandTotal.textContent=money(state.lines.reduce((s,x)=>s+x.total,0));
-  itemCount.textContent=`${state.lines.length} ${state.lines.length===1?"cortina":"cortinas"}`;
-}
-
-function clearEntry(resetAll=false){
-  if(resetAll){
-    grupoMecanismo.value="";
-    resetMechanismHierarchy();
-    grupoTela.value="";
-    loadFabricTypes();
-  }else{
-    mecanismo.value="";mecanismoPickerText.textContent="Elegir mecanismo";
-  }
-  tela.value="";telaPickerText.textContent="Elegir tela";
-  ancho.value="";largo.value="";cantidad.value=1;
-  loadAccessoryTypes();cantidadAccesorio.value=1;
-  calculate();
-}
-
 function addLine(){
   const c=calculate();
-
-  if(!c.m && !c.t)return alert("Elegí al menos un mecanismo o una tela.");
-  if(c.m && !grupoMecanismo.value)return alert("Elegí el grupo del mecanismo.");
-  if(c.t && !grupoTela.value)return alert("Elegí el grupo de tela.");
-
-  const dims=requiredDimensions([c.m,c.t,c.a]);
-  if(dims.width && c.w<=0 && dims.height)return alert("Ingresá ancho y largo.");
-  if(dims.width && c.w<=0)return alert("Ingresá el ancho.");
-  if(dims.height && c.h<=0)return alert("Ingresá el largo.");
-
-  state.lines.push({
-    id:Date.now(),
-    grupo:c.m?grupoMecanismo.value:"",
-    tipoM:c.m?tipoMecanismo.value:"",
-    subtipoM:c.m?subtipoMecanismo.value:"",
-    m:c.m?.descripcion||"",
-    grupoTela:c.t?grupoTela.value:"",
-    subtipoTela:c.t?subtipoTela.value:"",
-    t:c.t?.descripcion||"",
-    tipoA:c.a?tipoAccesorio.value:"",
-    subtipoA:c.a?subtipoAccesorio.value:"",
-    a:c.a?.descripcion||"",
-    w:c.w,h:c.h,q:c.q,aq:c.a?c.aq:0,
-    mecanismoImporte:c.mt,
-    telaImporte:c.tt,
-    accesorioImporte:c.at,
-    mecanismoBase:c.mecanismoBase,
-    telaBase:c.telaBase,
-    accesorioBase:c.accesorioBase,
-    mecanismoAutoDiscount:c.mecanismoAutoDiscount,
-    telaAutoDiscount:c.telaAutoDiscount,
-    accesorioAutoDiscount:c.accesorioAutoDiscount,
-    automaticDiscount:c.automaticDiscount,
-    subtotal:c.subtotal,discountPct:state.discount,total:c.total
-  });
-
-  save();
-  render();
-  clearEntry(false);
-  addBtn.textContent="Agregar cortina";
+  if(!tipoCortina.value)return alert("Elegí el tipo de cortina.");
+  if(!c.items.length)return alert("Elegí al menos un artículo.");
+  if(c.dims.w&&c.w<=0)return alert(c.dims.h?"Ingresá ancho y largo.":"Ingresá el ancho.");
+  if(c.dims.h&&c.h<=0)return alert("Ingresá el largo.");
+  state.lines.push({id:Date.now(),tipo:tipoCortina.value,w:c.w,h:c.h,q:c.q,pct:c.pct,subtotal:c.subtotal,total:c.total,
+    items:c.details.map(x=>({component:x.component,descripcion:x.product.descripcion,unidad:x.product.unidad,base:x.base,auto:x.auto,final:x.final,aplica40:x.product.aplica40,itemQty:x.itemQty||1,multi:!!x.multi}))});
+  save();renderBudget();clearEntry();
 }
-
-function removeLine(id){state.lines=state.lines.filter(x=>x.id!==id);save();render()}
-
-function editLine(id){
-  const x=state.lines.find(v=>v.id===id);
-  if(!x)return;
-
-  grupoMecanismo.value=x.grupo;
-  loadMechanismTypes();
-  grupoTela.value=x.grupoTela||"";
-  loadFabricTypes();
-
-  if(x.m){
-    tipoMecanismo.value=x.tipoM||"";
-    loadMechanismSubtypes();
-    subtipoMecanismo.value=x.subtipoM||"";
-    enableMechanismPicker();
-    mecanismo.value=x.m;
-    mecanismoPickerText.textContent=x.m;
-  }else{
-    tipoMecanismo.value="";
-    subtipoMecanismo.value="";
-    mecanismo.value="";
-    mecanismoPickerText.textContent="Elegir mecanismo";
-  }
-
-  if(x.t){
-    subtipoTela.value=x.subtipoTela||"";
-    enableFabricPicker();
-    tela.value=x.t;
-    telaPickerText.textContent=x.t;
-  }else{
-    subtipoTela.value="";
-    tela.value="";
-    telaPickerText.textContent="Elegir tela";
-    telaPicker.disabled=true;
-  }
-
-  ancho.value=String(x.w).replace(".",",");
-  largo.value=String(x.h).replace(".",",");
-  cantidad.value=x.q;
-  loadAccessoryTypes();
-  if(x.a){
-    tipoAccesorio.value=x.tipoA||"";
-    loadAccessorySubtypes();
-    subtipoAccesorio.value=x.subtipoA||"";
-    enableAccessoryPicker();
-    accesorio.value=x.a;
-    accesorioPickerText.textContent=x.a;
-  }
-  cantidadAccesorio.value=x.aq||1;
-
-  state.discount=Number(x.discountPct||0);
-  discountPercent.value=state.discount;
-
-  state.lines=state.lines.filter(v=>v.id!==id);
-  save();
-  render();
-  calculate();
-
-  addBtn.textContent="Guardar cambios";
-  window.scrollTo({top:0,behavior:"smooth"});
+function clearEntry(){tipoCortina.value="";componentes.innerHTML="";state.components={};ancho.value="";largo.value="";cantidad.value=1;calculate();window.scrollTo({top:0,behavior:"smooth"})}
+function removeLine(id){state.lines=state.lines.filter(x=>x.id!==id);save();renderBudget()}
+function renderBudget(){
+  budgetLines.innerHTML=state.lines.length?state.lines.map((x,i)=>`<article class="line"><div class="line-head"><span>${esc(x.tipo)} ${i+1}</span><span>${money(x.total)}</span></div>
+    <div class="line-detail">${x.w||x.h?`${x.q} × ${x.w?fmtMeasure(x.w)+" m":""}${x.w&&x.h?" × ":""}${x.h?fmtMeasure(x.h)+" m":""}`:`Cantidad: ${x.q}`}
+    ${x.items.map(it=>`<br><b>${esc(it.component)}${it.multi?` × ${it.itemQty}`:""}:</b> ${esc(it.descripcion)} — ${money(it.final)}${it.auto>0?` <span class="auto-applied">(40%: -${money(it.auto)})</span>`:""}`).join("")}
+    ${x.pct>0?`<br>Descuento adicional (${x.pct}%): -${money(x.subtotal*x.pct/100)}`:""}</div>
+    <div class="actions"><button class="delete" onclick="removeLine(${x.id})">Eliminar</button></div></article>`).join(""):'<p class="empty">Todavía no agregaste nada.</p>';
+  grandTotal.textContent=money(state.lines.reduce((s,x)=>s+x.total,0));itemCount.textContent=`${state.lines.length} ${state.lines.length===1?"ítem":"ítems"}`;
 }
-
-function copyLast(){
-  const x=state.lines.at(-1);
-  if(!x)return alert("Todavía no hay una cortina para copiar.");
-
-  grupoMecanismo.value=x.grupo;
-  loadMechanismTypes();
-  grupoTela.value=x.grupoTela||"";
-  loadFabricTypes();
-
-  if(x.m){
-    tipoMecanismo.value=x.tipoM||"";
-    loadMechanismSubtypes();
-    subtipoMecanismo.value=x.subtipoM||"";
-    enableMechanismPicker();
-    mecanismo.value=x.m;
-    mecanismoPickerText.textContent=x.m;
-  }
-
-  if(x.t){
-    subtipoTela.value=x.subtipoTela||"";
-    enableFabricPicker();
-    tela.value=x.t;
-    telaPickerText.textContent=x.t;
-  }
-
-  ancho.value=String(x.w).replace(".",",");
-  largo.value=String(x.h).replace(".",",");
-  cantidad.value=x.q;
-  loadAccessoryTypes();
-  if(x.a){
-    tipoAccesorio.value=x.tipoA||"";
-    loadAccessorySubtypes();
-    subtipoAccesorio.value=x.subtipoA||"";
-    enableAccessoryPicker();
-    accesorio.value=x.a;
-    accesorioPickerText.textContent=x.a;
-  }
-  cantidadAccesorio.value=x.aq||1;
-
-  state.discount=Number(x.discountPct||0);
-  discountPercent.value=state.discount;
-
-  calculate();
-  window.scrollTo({top:0,behavior:"smooth"});
-}
-
-function newBudget(){
-  if(!state.lines.length||confirm("¿Empezar un presupuesto nuevo?")){
-    state.lines=[];state.discount=0;discountPercent.value=0;save();render();clearEntry(true);addBtn.textContent="Agregar cortina";
-  }
-}
-
 function sendWhatsApp(){
-  if(!state.lines.length)return alert("Agregá al menos una cortina.");
-
-  const totalPresupuesto=state.lines.reduce((s,x)=>s+x.total,0);
-
+  if(!state.lines.length)return alert("Agregá al menos un ítem.");
   const blocks=state.lines.map((x,i)=>{
-    const pct=Number(x.discountPct||0);
-    const descuentoAdicional=(x.subtotal||0)*pct/100;
-
-    const dimensions=(x.w>0||x.h>0)
-      ? `${x.q} × ${x.w>0?x.w.toFixed(2).replace(".",",")+" m":""}${x.w>0&&x.h>0?" × ":""}${x.h>0?x.h.toFixed(2).replace(".",",")+" m":""}`
-      : `Cantidad: ${x.q}`;
-
-    const lines=[
-      `*CORTINA ${i+1}*`,
-      `📐 ${dimensions}`,
-      "",
-      x.m?`⚙️ *Mecanismo:* ${x.m}`:"",
-      x.m?`   Precio sin IVA: ${money(x.mecanismoBase||x.mecanismoImporte||0)}`:"",
-      x.m?(Number(x.mecanismoAutoDiscount||0)>0
-        ?`   40% automático: -${money(x.mecanismoAutoDiscount)}`
-        :"   40% automático: no aplica"):"",
-      x.m?`   *Precio mecanismo: ${money(x.mecanismoImporte||0)}*`:"",
-      "",
-      x.t?`🪟 *Tela:* ${x.t}`:"",
-      x.t?`   Precio sin IVA: ${money(x.telaBase||x.telaImporte||0)}`:"",
-      x.t?(Number(x.telaAutoDiscount||0)>0
-        ?`   40% automático: -${money(x.telaAutoDiscount)}`
-        :"   40% automático: no aplica"):"",
-      x.t?`   *Precio tela: ${money(x.telaImporte||0)}*`:"",
-      "",
-      x.a?`➕ *Accesorio:* ${x.aq} × ${x.a}`:"",
-      x.a?`   Precio sin IVA: ${money(x.accesorioBase||x.accesorioImporte||0)}`:"",
-      x.a?(Number(x.accesorioAutoDiscount||0)>0
-        ?`   40% automático: -${money(x.accesorioAutoDiscount)}`
-        :"   40% automático: no aplica"):"",
-      x.a?`   *Precio accesorio: ${money(x.accesorioImporte||0)}*`:"",
-      "",
-      Number(x.automaticDiscount||0)>0?`*Descuento automático total:* -${money(x.automaticDiscount)}`:"",
-      pct>0?`*Descuento adicional (${pct}%):* -${money(descuentoAdicional)}`:"",
-      `*TOTAL CORTINA ${i+1}: ${money(x.total)}*`
-    ].filter(line=>line!==null&&line!==undefined&&line!=="");
-
+    const lines=[`*${x.tipo.toUpperCase()} ${i+1}*`,x.w||x.h?`📐 ${x.q} × ${x.w?fmtMeasure(x.w)+" m":""}${x.w&&x.h?" × ":""}${x.h?fmtMeasure(x.h)+" m":""}`:`Cantidad: ${x.q}`,""];
+    x.items.forEach(it=>{
+      lines.push(
+        `*${it.component}${it.multi?` × ${it.itemQty}`:""}:* ${it.descripcion}`,
+        `Precio sin IVA: ${money(it.base)}`,
+        it.auto>0?`40% automático: -${money(it.auto)}`:"40% automático: no aplica",
+        `*Precio ${it.component.toLowerCase()}: ${money(it.final)}*`,
+        ""
+      );
+    });
+    if(x.pct>0)lines.push(`*Descuento adicional (${x.pct}%):* -${money(x.subtotal*x.pct/100)}`,"");
+    lines.push(`*TOTAL ${x.tipo.toUpperCase()} ${i+1}: ${money(x.total)}*`);
     return lines.join("\n");
   });
-
-  const msg=[
-    "🟢 *PRESUPUESTO*",
-    "",
-    ...blocks.flatMap((block,i)=>i<blocks.length-1?[block,"","──────────────",""]:[block]),
-    "",
-    "━━━━━━━━━━━━━━",
-    `*TOTAL PRESUPUESTO: ${money(totalPresupuesto)}*`
-  ].join("\n");
-
+  const msg=["🟢 *PRESUPUESTO*","",...blocks.flatMap((b,i)=>i<blocks.length-1?[b,"","──────────────",""]:[b]),"","━━━━━━━━━━━━━━",`*TOTAL PRESUPUESTO: ${money(state.lines.reduce((s,x)=>s+x.total,0))}*`].join("\n");
   open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 }
-grupoMecanismo.addEventListener("change",()=>{loadMechanismTypes();loadAccessoryTypes();calculate();});
-tipoMecanismo.addEventListener("change",()=>{loadMechanismSubtypes();calculate();});
-subtipoMecanismo.addEventListener("change",enableMechanismPicker);
-grupoTela.addEventListener("change",()=>{loadFabricTypes();calculate();});
-subtipoTela.addEventListener("change",enableFabricPicker);
-["ancho","largo","cantidad","cantidadAccesorio"].forEach(id=>$(id).addEventListener("input",calculate));
-discountPercent.addEventListener("input",()=>{state.discount=Math.min(100,Math.max(0,Number(discountPercent.value)||0));save();calculate();});
 
-mecanismoPicker.addEventListener("click",()=>openPicker("mecanismo","Elegir mecanismo",mechanismItems()));
-telaPicker.addEventListener("click",()=>openPicker("tela","Elegir tela",fabricItems()));
-tipoAccesorio.addEventListener("change",loadAccessorySubtypes);
-subtipoAccesorio.addEventListener("change",enableAccessoryPicker);
-accesorioPicker.addEventListener("click",()=>openPicker("accesorio","Elegir accesorio",accessoryItems()));
-pickerSearch.addEventListener("input",renderPickerList);pickerClose.addEventListener("click",closePicker);
-pickerModal.querySelector(".picker-backdrop").addEventListener("click",closePicker);
-
-addBtn.onclick=addLine;copyLastBtn.onclick=copyLast;whatsappBtn.onclick=sendWhatsApp;newBudgetBtn.onclick=newBudget;
-init();render();calculate();
+tipoCortina.addEventListener("change",renderComponents);
+["ancho","largo","cantidad"].forEach(id=>$(id).addEventListener("input",calculate));
+discountPercent.addEventListener("input",()=>{state.discount=Number(discountPercent.value)||0;save();calculate()});
+pickerSearch.addEventListener("input",renderPicker);pickerClose.addEventListener("click",closePicker);pickerModal.querySelector(".picker-backdrop").addEventListener("click",closePicker);
+addBtn.addEventListener("click",addLine);newBudgetBtn.addEventListener("click",()=>{if(!state.lines.length||confirm("¿Empezar un presupuesto nuevo?")){state.lines=[];state.discount=0;discountPercent.value=0;save();renderBudget();clearEntry()}});
+whatsappBtn.addEventListener("click",sendWhatsApp);
+init();
 if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js").catch(()=>{});
