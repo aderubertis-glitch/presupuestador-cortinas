@@ -1,9 +1,8 @@
-# Presupuestador - mínimos de venta
+# Presupuestador - medidas visibles
 
-Reglas nuevas:
-- Artículos por ML: mínimo facturable 1,000 ML por cortina.
-- Artículos por M2: mínimo facturable 1,000 m² por cortina.
-- Si la medida real supera el mínimo, se factura la medida real.
-- Unidad/Kit/Set y similares no cambian.
-- Cuando se aplica un mínimo, la app lo informa en el desglose y en WhatsApp.
-- Se mantienen máscara dinámica, múltiples accesorios, descuentos y medidas con 3 decimales.
+Corrección:
+- Ancho/Largo se muestran desde que se elige el tipo de cortina.
+- Si el tipo usa ML, muestra Ancho.
+- Si el tipo usa M2, muestra Ancho y Largo.
+- No hace falta seleccionar primero un artículo.
+- Se mantienen mínimos de 1 ML y 1 M2, máscara dinámica, múltiples accesorios y descuentos.
