@@ -1,8 +1,8 @@
-# Presupuestador - medidas visibles
+# Presupuestador - corrección de lectura del Excel
 
-Corrección:
-- Ancho/Largo se muestran desde que se elige el tipo de cortina.
-- Si el tipo usa ML, muestra Ancho.
-- Si el tipo usa M2, muestra Ancho y Largo.
-- No hace falta seleccionar primero un artículo.
-- Se mantienen mínimos de 1 ML y 1 M2, máscara dinámica, múltiples accesorios y descuentos.
+Corrección importante:
+- La app ya no identifica Unidad, Precio, filtros, etc. por número de columna.
+- Ahora los identifica por el nombre del encabezado del Excel.
+- Esto evita que agregar/mover columnas desplace los datos.
+- Roller vuelve a detectar ML y M2 correctamente, por lo que muestra Ancho y Largo.
+- Se mantienen mínimos de 1 ML / 1 m2, múltiples accesorios, descuentos y medidas con 3 decimales.
