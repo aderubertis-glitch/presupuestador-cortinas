@@ -1,5 +1,13 @@
-# Presupuestador - aumento general 6%
+# Presupuestador - nombres normalizados
 
-- Se incrementaron 6% todos los precios sin IVA.
-- El aumento se aplica a todos los productos.
-- Se mantienen todas las reglas existentes: descuento automático del 40% donde corresponda, excepciones sin descuento, descuento adicional manual, mínimos de venta, accesorios y reparaciones opcionales.
+Corrección:
+- Riel hotel -> Riel Hotel
+- Riel europeo -> Riel Europeo
+- Zebra -> Zebras
+- Venecianas -> Veneciana
+- Catálogo -> Catálogos
+- Romanas / Sistema -> Sistemas
+- Riel Europeo / Accesorio -> Accesorios
+
+Esto evita desplegables vacíos por diferencias de mayúsculas, plural o nomenclatura.
+Se mantiene el aumento general del 6% y todas las reglas previas.
