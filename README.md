@@ -1,8 +1,5 @@
-# Presupuestador - opcionales por tipo
+# Presupuestador - aumento general 6%
 
-- Accesorios: pregunta Sí/No por cada tipo de cortina que tenga ese componente.
-- Reparaciones: pregunta Sí/No por cada tipo de cortina que tenga ese componente.
-- En No los campos quedan ocultos.
-- En Sí se habilitan los filtros y artículos configurados en Parámetros.
-- Accesorios permite agregar varios artículos con cantidades independientes.
-- Se mantienen ancho/largo, mínimos de venta, descuentos, medidas con 3 decimales y WhatsApp.
+- Se incrementaron 6% todos los precios sin IVA.
+- El aumento se aplica a todos los productos.
+- Se mantienen todas las reglas existentes: descuento automático del 40% donde corresponda, excepciones sin descuento, descuento adicional manual, mínimos de venta, accesorios y reparaciones opcionales.
