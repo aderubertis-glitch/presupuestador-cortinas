@@ -1,13 +1,8 @@
-# Presupuestador - nombres normalizados
+# Presupuestador - Lista Comercial 08.26 final
 
-Corrección:
-- Riel hotel -> Riel Hotel
-- Riel europeo -> Riel Europeo
-- Zebra -> Zebras
-- Venecianas -> Veneciana
-- Catálogo -> Catálogos
-- Romanas / Sistema -> Sistemas
-- Riel Europeo / Accesorio -> Accesorios
-
-Esto evita desplegables vacíos por diferencias de mayúsculas, plural o nomenclatura.
-Se mantiene el aumento general del 6% y todas las reglas previas.
+- Precios tomados directamente de la lista 08.26 corregida (ya incluyen el aumento vigente).
+- No se aplica ningún +6% adicional.
+- Los artículos de la hoja "Artículos sin precio" no se incluyen en la app.
+- Riel europeo y Riel hotel: Tipo de riel → Medida → Artículo.
+- Horizontales aluminio: se eliminó Reparaciones de Parámetros porque no hay artículos de esa categoría.
+- Se mantienen descuentos, mínimos de venta, múltiples accesorios, reparaciones opcionales y medidas con 3 decimales.
